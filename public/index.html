@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TicTacToe Multiplayer Server</title>
+    <title>Arcade - Multiplayer Games</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🎮 TicTacToe Multiplayer Server</h1>
+            <h1>🎮 Arcade</h1>
         </header>
 
         <!-- Welcome Screen -->
         <div id="welcome-screen" class="screen">
             <div class="welcome-content">
                 <div class="welcome-text">
-                    <h2>Welcome to TicTacToe!</h2>
-                    <p>Play with friends online in real-time</p>
+                    <h2>Welcome to the Arcade!</h2>
+                    <p>Play multiplayer games with friends online in real-time</p>
                 </div>
                 <button id="start-btn" class="btn btn-primary btn-large">Start Playing</button>
             </div>
@@ -26,27 +26,47 @@
         <!-- Choice Screen -->
         <div id="choice-screen" class="screen hidden">
             <div class="choice-content">
-                <h2>How would you like to play?</h2>
+                <h2>Choose a Game</h2>
                 <div class="choice-buttons">
                     <button id="choice-create-btn" class="btn btn-primary choice-btn">
                         <div class="choice-icon">🎮</div>
-                        <div class="choice-title">Create New Game</div>
-                        <div class="choice-desc">Start a new game and invite friends</div>
+                        <div class="choice-title">TicTacToe</div>
+                        <div class="choice-desc">Classic 3x3 grid game - Create or join</div>
                     </button>
-                    <button id="choice-join-btn" class="btn btn-secondary choice-btn">
-                        <div class="choice-icon">🔗</div>
-                        <div class="choice-title">Join Game</div>
-                        <div class="choice-desc">Join an existing game with Game ID</div>
+                    <button id="choice-join-btn" class="btn btn-secondary choice-btn" disabled>
+                        <div class="choice-icon">🚧</div>
+                        <div class="choice-title">Coming Soon</div>
+                        <div class="choice-desc">More games will be added here!</div>
                     </button>
                 </div>
                 <button id="back-to-welcome-btn" class="btn btn-link">← Back</button>
             </div>
         </div>
 
+        <!-- TicTacToe Menu Screen -->
+        <div id="tictactoe-menu-screen" class="screen hidden">
+            <div class="choice-content">
+                <h2>TicTacToe</h2>
+                <div class="choice-buttons">
+                    <button id="tictactoe-create-btn" class="btn btn-primary choice-btn">
+                        <div class="choice-icon">➕</div>
+                        <div class="choice-title">Create Game</div>
+                        <div class="choice-desc">Start a new game and invite friends</div>
+                    </button>
+                    <button id="tictactoe-join-btn" class="btn btn-secondary choice-btn">
+                        <div class="choice-icon">🔗</div>
+                        <div class="choice-title">Join Game</div>
+                        <div class="choice-desc">Join an existing game with Game ID</div>
+                    </button>
+                </div>
+                <button id="back-to-games-btn" class="btn btn-link">← Back to Games</button>
+            </div>
+        </div>
+
         <!-- Create Game Form -->
         <div id="create-screen" class="screen hidden">
             <div class="form-content">
-                <h2>Create New Game</h2>
+                <h2>TicTacToe - Create Game</h2>
                 <div class="form-group">
                     <div class="input-container">
                         <input type="text" id="create-player-name" placeholder="Enter your name (2-15 characters)" maxlength="15" minlength="2" required>
@@ -61,7 +81,7 @@
         <!-- Join Game Form -->
         <div id="join-screen" class="screen hidden">
             <div class="form-content">
-                <h2>Join Existing Game</h2>
+                <h2>TicTacToe - Join Game</h2>
                 <div class="form-group">
                     <div class="input-container">
                         <input type="text" id="join-player-name" placeholder="Enter your name (2-15 characters)" maxlength="15" minlength="2" required>

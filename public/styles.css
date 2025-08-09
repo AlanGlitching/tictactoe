@@ -114,6 +114,19 @@ header h1 {
     border-color: rgba(102, 126, 234, 0.3);
 }
 
+.choice-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: rgba(200, 200, 200, 0.95);
+    color: #666;
+}
+
+.choice-btn:disabled:hover {
+    transform: none;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-color: transparent;
+}
+
 .choice-icon {
     font-size: 3rem;
     margin-bottom: 10px;

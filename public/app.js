@@ -16,6 +16,7 @@ class TicTacToeMultiplayerClient {
         // Screens
         this.welcomeScreen = document.getElementById('welcome-screen');
         this.choiceScreen = document.getElementById('choice-screen');
+        this.tictactoeMenuScreen = document.getElementById('tictactoe-menu-screen');
         this.createScreen = document.getElementById('create-screen');
         this.joinScreen = document.getElementById('join-screen');
         this.gameScreen = document.getElementById('game-screen');
@@ -24,9 +25,14 @@ class TicTacToeMultiplayerClient {
         this.startBtn = document.getElementById('start-btn');
         
         // Choice elements
-        this.choiceCreateBtn = document.getElementById('choice-create-btn');
-        this.choiceJoinBtn = document.getElementById('choice-join-btn');
+        this.choiceTicTacToeBtn = document.getElementById('choice-create-btn'); // Repurposed as TicTacToe
+        this.choiceComingSoonBtn = document.getElementById('choice-join-btn'); // Repurposed as Coming Soon
         this.backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
+        
+        // TicTacToe menu elements
+        this.tictactoeCreateBtn = document.getElementById('tictactoe-create-btn');
+        this.tictactoeJoinBtn = document.getElementById('tictactoe-join-btn');
+        this.backToGamesBtn = document.getElementById('back-to-games-btn');
         
         // Form elements
         this.createPlayerNameInput = document.getElementById('create-player-name');
@@ -66,11 +72,14 @@ class TicTacToeMultiplayerClient {
     attachEventListeners() {
         // Navigation events
         this.startBtn.addEventListener('click', () => this.showChoiceScreen());
-        this.choiceCreateBtn.addEventListener('click', () => this.showCreateScreen());
-        this.choiceJoinBtn.addEventListener('click', () => this.showJoinScreen());
+        this.choiceTicTacToeBtn.addEventListener('click', () => this.showTicTacToeMenu());
+        this.choiceComingSoonBtn.addEventListener('click', () => this.showComingSoonMessage());
         this.backToWelcomeBtn.addEventListener('click', () => this.showWelcomeScreen());
-        this.backToChoiceBtn.addEventListener('click', () => this.showChoiceScreen());
-        this.backToChoiceBtn2.addEventListener('click', () => this.showChoiceScreen());
+        this.backToChoiceBtn.addEventListener('click', () => this.showTicTacToeMenu());
+        this.backToChoiceBtn2.addEventListener('click', () => this.showTicTacToeMenu());
+        this.tictactoeCreateBtn.addEventListener('click', () => this.showCreateScreen());
+        this.tictactoeJoinBtn.addEventListener('click', () => this.showJoinScreen());
+        this.backToGamesBtn.addEventListener('click', () => this.showChoiceScreen());
         
         // Form events
         this.createGameBtn.addEventListener('click', () => this.createGame());
@@ -237,8 +246,17 @@ class TicTacToeMultiplayerClient {
         this.startPolling();
     }
 
+    showTicTacToeMenu() {
+        this.hideAllScreens();
+        this.tictactoeMenuScreen.classList.remove('hidden');
+    }
+
+    showComingSoonMessage() {
+        this.showError('More games coming soon! Stay tuned for updates.');
+    }
+
     hideAllScreens() {
-        [this.welcomeScreen, this.choiceScreen, this.createScreen, this.joinScreen, this.gameScreen].forEach(screen => {
+        [this.welcomeScreen, this.choiceScreen, this.tictactoeMenuScreen, this.createScreen, this.joinScreen, this.gameScreen].forEach(screen => {
             screen.classList.add('hidden');
         });
     }

@@ -1,18 +1,23 @@
-# 🎮 TicTacToe Multiplayer Server
+# 🎮 Arcade - Multiplayer Games Server
 
-A true multiplayer TicTacToe game built with Node.js and Express. Each player connects from their own device/browser for authentic multiplayer gameplay!
+A multiplayer arcade games platform built with Node.js and Express. Currently featuring TicTacToe with more games coming soon! Each player connects from their own device/browser for authentic multiplayer gameplay.
 
 ## ✨ Features
 
+### 🎮 Platform Features
+- **Multi-Game Arcade**: Growing collection of multiplayer games
+- **Game Selection Menu**: Choose from available games with beautiful interface
+- **Beautiful UI**: Modern, responsive design with smooth animations
+- **Cross-platform**: Works on desktop and mobile devices
+- **RESTful API**: Clean API endpoints for game interactions
+
+### 🎯 TicTacToe Game Features
 - **True Multiplayer**: Each player connects from separate devices/browsers
 - **Player Sessions**: Individual player authentication and game sessions
 - **Turn-based Gameplay**: Only the current player can make moves
 - **Real-time Updates**: Game state synchronizes automatically every 2 seconds
-- **Beautiful UI**: Modern, responsive design with smooth animations
 - **Waiting Rooms**: Players join games and wait for opponents
 - **Player Names**: Personalized experience with custom player names
-- **RESTful API**: Clean API endpoints for game interactions
-- **Cross-platform**: Works on desktop and mobile devices
 
 ## 🚀 Quick Start
 

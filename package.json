@@ -1,7 +1,7 @@
 {
-  "name": "tictactoe-server",
+  "name": "arcade-server",
   "version": "1.0.0",
-  "description": "A TicTacToe game server with web interface",
+  "description": "A multiplayer arcade games server with web interface",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -15,7 +15,7 @@
   "devDependencies": {
     "nodemon": "^3.0.1"
   },
-  "keywords": ["tictactoe", "game", "server", "nodejs"],
+  "keywords": ["arcade", "games", "multiplayer", "server", "nodejs", "tictactoe"],
   "author": "",
   "license": "MIT"
 } 
