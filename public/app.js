@@ -99,7 +99,7 @@ class TicTacToeMultiplayerClient {
         const isValid = this.validatePlayerName(name);
         
         this.updateInputValidation(this.createPlayerNameInput, this.createNameFeedback, isValid, name);
-        this.createGameBtn.disabled = !isValid;
+        this.createGameBtn.disabled = !isValid.valid;
     }
 
     validateJoinForm() {
