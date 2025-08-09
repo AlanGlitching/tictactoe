@@ -177,20 +177,25 @@ header h1 {
 }
 
 .btn-link {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.6);
+    color: #667eea;
     font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
-    padding: 10px 20px;
-    border-radius: 10px;
+    padding: 12px 24px;
+    border-radius: 12px;
     transition: all 0.3s ease;
     text-decoration: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
 .btn-link:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
+    color: #5a6fd8;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
 }
 
 /* Difficulty Selection */
@@ -634,10 +639,12 @@ main {
 
 .btn:disabled {
     opacity: 0.6;
-    cursor: not-allowed;
-    background: #ccc !important;
-    color: #666 !important;
-    box-shadow: none !important;
+    cursor: not-allowed !important;
+    background: #e0e0e0 !important;
+    color: #999 !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+    transform: none !important;
+    pointer-events: none !important;
 }
 
 .btn-primary {

@@ -45,6 +45,12 @@ class TicTacToeMultiplayerClient {
         this.joinGameBtn = document.getElementById('join-game-btn');
         this.aiPlayerNameInput = document.getElementById('ai-player-name');
         this.startAiGameBtn = document.getElementById('start-ai-game-btn');
+        
+        // Debug: Check if elements are found
+        console.log('AI elements found:', {
+            aiInput: !!this.aiPlayerNameInput,
+            startBtn: !!this.startAiGameBtn
+        });
         this.backToChoiceBtn = document.getElementById('back-to-choice-btn');
         this.backToChoiceBtn2 = document.getElementById('back-to-choice-btn2');
         this.backToChoiceBtn3 = document.getElementById('back-to-choice-btn3');
@@ -93,7 +99,17 @@ class TicTacToeMultiplayerClient {
         // Form events
         this.createGameBtn.addEventListener('click', () => this.createGame());
         this.joinGameBtn.addEventListener('click', () => this.joinGame());
-        this.startAiGameBtn.addEventListener('click', () => this.startAiGame());
+        
+        // Add debug for AI button
+        if (this.startAiGameBtn) {
+            this.startAiGameBtn.addEventListener('click', () => {
+                console.log('AI start button clicked!');
+                this.startAiGame();
+            });
+            console.log('AI start button event listener added');
+        } else {
+            console.error('AI start button not found!');
+        }
         
         // Input validation
         this.createPlayerNameInput.addEventListener('input', () => this.validateCreateForm());
@@ -267,8 +283,13 @@ class TicTacToeMultiplayerClient {
             this.selectDifficulty(mediumBtn);
         }
         
-        // Validate form to update button state
-        this.validateAiForm();
+        // Clear the input and force re-validation
+        this.aiPlayerNameInput.value = '';
+        
+        // Add a small delay to ensure DOM is ready
+        setTimeout(() => {
+            this.validateAiForm();
+        }, 100);
     }
 
     showGameScreen() {
@@ -332,32 +353,52 @@ class TicTacToeMultiplayerClient {
         const isValid = this.validatePlayerName(playerName);
         
         this.updateInputValidation(this.aiPlayerNameInput, this.aiNameFeedback, isValid);
-        this.startAiGameBtn.disabled = !isValid.valid;
         
-        console.log('AI Form validation:', { playerName, isValid, buttonDisabled: this.startAiGameBtn.disabled });
+        if (this.startAiGameBtn) {
+            this.startAiGameBtn.disabled = !isValid.valid;
+            console.log('AI Form validation:', { 
+                playerName, 
+                isValid, 
+                buttonDisabled: this.startAiGameBtn.disabled,
+                buttonElement: !!this.startAiGameBtn 
+            });
+        } else {
+            console.error('startAiGameBtn not found during validation');
+        }
         
         return isValid;
     }
 
     async startAiGame() {
+        console.log('startAiGame called');
+        
         const validation = this.validateAiForm();
+        console.log('Validation result:', validation);
+        
         if (!validation.valid) {
+            console.log('Validation failed:', validation.message);
             this.showError(validation.message);
             return;
         }
 
         try {
+            console.log('Starting AI game...');
             this.startAiGameBtn.disabled = true;
             this.startAiGameBtn.textContent = 'Starting...';
+
+            const requestData = {
+                playerName: this.aiPlayerNameInput.value.trim(),
+                difficulty: this.selectedDifficulty
+            };
+            console.log('Sending request:', requestData);
 
             const response = await this.apiCall('/game/ai', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    playerName: this.aiPlayerNameInput.value.trim(),
-                    difficulty: this.selectedDifficulty
-                })
+                body: JSON.stringify(requestData)
             });
+            
+            console.log('AI game response:', response);
 
             this.gameId = response.gameId;
             this.playerId = response.playerId;
