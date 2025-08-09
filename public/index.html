@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicTacToe Multiplayer Server</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 TicTacToe Multiplayer Server</h1>
+        </header>
+
+        <!-- Join/Create Game Screen -->
+        <div id="lobby-screen" class="screen">
+            <div class="lobby-content">
+                <div class="section">
+                    <h2>Create New Game</h2>
+                    <div class="form-group">
+                        <input type="text" id="create-player-name" placeholder="Enter your name" maxlength="20">
+                        <button id="create-game-btn" class="btn btn-primary">Create Game</button>
+                    </div>
+                </div>
+
+                <div class="divider">OR</div>
+
+                <div class="section">
+                    <h2>Join Existing Game</h2>
+                    <div class="form-group">
+                        <input type="text" id="join-player-name" placeholder="Enter your name" maxlength="20">
+                        <input type="text" id="join-game-id" placeholder="Enter Game ID">
+                        <button id="join-game-btn" class="btn btn-secondary">Join Game</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen hidden">
+            <div class="game-info">
+                <div class="player-info">
+                    <div class="your-info">
+                        You: <span id="your-name"></span> (<span id="your-symbol"></span>)
+                    </div>
+                    <div class="game-id-info">
+                        Game ID: <span id="current-game-id"></span>
+                        <button id="copy-id-btn" class="btn-icon" title="Copy Game ID">📋</button>
+                    </div>
+                </div>
+                <div class="players-list" id="players-list">
+                    <!-- Players will be populated here -->
+                </div>
+            </div>
+
+            <div class="game-status" id="game-status">
+                Waiting for players...
+            </div>
+
+            <div class="game-board" id="game-board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+
+            <div class="controls">
+                <button id="reset-game-btn" class="btn btn-secondary" disabled>Reset Game</button>
+                <button id="leave-game-btn" class="btn btn-warning">Leave Game</button>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <footer>
+            <div class="instructions">
+                <h3>How to Play</h3>
+                <ul>
+                    <li>Enter your name and create a new game or join with a Game ID</li>
+                    <li>Share the Game ID with a friend to play together</li>
+                    <li>Each player connects from their own device/browser</li>
+                    <li>Players take turns - only the current player can make moves</li>
+                    <li>First to get 3 in a row wins!</li>
+                </ul>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html> 
