@@ -66,10 +66,17 @@ header h1 {
 }
 
 .btn-large {
-    padding: 18px 40px;
-    font-size: 1.3rem;
+    padding: 20px 45px;
+    font-size: 1.4rem;
     border-radius: 30px;
-    min-width: 200px;
+    min-width: 220px;
+    font-weight: 800;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-large:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
 }
 
 /* Choice Screen */
@@ -206,56 +213,97 @@ header h1 {
 }
 
 .difficulty-btn {
-    padding: 20px 15px;
-    border-radius: 15px;
+    padding: 25px 20px;
+    border-radius: 20px;
     background: white;
-    border: 2px solid #e0e0e0;
+    border: 3px solid #e0e0e0;
     color: #333;
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    min-height: 120px;
+    gap: 10px;
+    min-height: 140px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .difficulty-btn:hover {
     border-color: #667eea;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+    background: rgba(102, 126, 234, 0.05);
 }
 
 .difficulty-btn.active {
     border-color: #667eea;
-    background: rgba(102, 126, 234, 0.1);
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
     color: #667eea;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.difficulty-btn.active:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
 }
 
 .difficulty-icon {
-    font-size: 2rem;
-    margin-bottom: 5px;
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+    transition: transform 0.3s ease;
+}
+
+.difficulty-btn:hover .difficulty-icon,
+.difficulty-btn.active .difficulty-icon {
+    transform: scale(1.1);
 }
 
 .difficulty-name {
-    font-weight: 600;
-    font-size: 1.1rem;
-    margin-bottom: 3px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .difficulty-desc {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: #666;
     text-align: center;
-    line-height: 1.3;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.difficulty-btn.active .difficulty-desc {
+    color: #5a6fd8;
+    font-weight: 600;
 }
 
 .btn-success {
-    background: linear-gradient(135deg, #48bb78, #38a169);
+    background: linear-gradient(45deg, #48bb78, #38a169);
     color: white;
+    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+    border: 2px solid transparent;
 }
 
-.btn-success:hover {
-    background: linear-gradient(135deg, #38a169, #2f855a);
+.btn-success:disabled {
+    background: #e0e0e0 !important;
+    color: #999 !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+    transform: none !important;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: linear-gradient(45deg, #38a169, #2f855a);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.7);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-success:active:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.5);
 }
 
 .btn-outline {
@@ -570,15 +618,18 @@ main {
 }
 
 .btn {
-    padding: 12px 24px;
+    padding: 15px 30px;
     border: none;
     border-radius: 25px;
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
 }
 
 .btn:disabled {
@@ -592,35 +643,53 @@ main {
 .btn-primary {
     background: linear-gradient(45deg, #667eea, #764ba2);
     color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    border: 2px solid transparent;
 }
 
 .btn-primary:disabled {
     background: #e0e0e0 !important;
     color: #999 !important;
-    box-shadow: none !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+    transform: none !important;
 }
 
 .btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.7);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: linear-gradient(45deg, #5a6fd8, #6a419a);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
 }
 
 .btn-secondary {
     background: linear-gradient(45deg, #95a5a6, #7f8c8d);
     color: white;
-    box-shadow: 0 4px 15px rgba(149, 165, 166, 0.4);
+    box-shadow: 0 6px 20px rgba(149, 165, 166, 0.4);
+    border: 2px solid transparent;
 }
 
 .btn-secondary:disabled {
     background: #e0e0e0 !important;
     color: #999 !important;
-    box-shadow: none !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+    transform: none !important;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(149, 165, 166, 0.6);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(149, 165, 166, 0.7);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: linear-gradient(45deg, #7f8c8d, #6c7a7b);
+}
+
+.btn-secondary:active:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(149, 165, 166, 0.5);
 }
 
 .btn-warning {
@@ -705,6 +774,21 @@ footer {
     left: 0;
     color: #4CAF50;
     font-weight: bold;
+}
+
+/* Pulsing animation for important buttons */
+@keyframes pulse {
+    0% { box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
+    50% { box-shadow: 0 8px 25px rgba(102, 126, 234, 0.7); }
+    100% { box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
+}
+
+.btn-primary:not(:disabled):not(:hover) {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.btn-success:not(:disabled):not(:hover) {
+    animation: pulse 2s ease-in-out infinite;
 }
 
 /* Responsive design */

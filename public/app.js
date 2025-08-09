@@ -260,6 +260,15 @@ class TicTacToeMultiplayerClient {
         this.hideAllScreens();
         this.vsAiScreen.classList.remove('hidden');
         this.aiPlayerNameInput.focus();
+        
+        // Ensure medium difficulty is selected by default
+        const mediumBtn = document.querySelector('.difficulty-btn[data-difficulty="medium"]');
+        if (mediumBtn && !mediumBtn.classList.contains('active')) {
+            this.selectDifficulty(mediumBtn);
+        }
+        
+        // Validate form to update button state
+        this.validateAiForm();
     }
 
     showGameScreen() {
@@ -324,6 +333,8 @@ class TicTacToeMultiplayerClient {
         
         this.updateInputValidation(this.aiPlayerNameInput, this.aiNameFeedback, isValid);
         this.startAiGameBtn.disabled = !isValid.valid;
+        
+        console.log('AI Form validation:', { playerName, isValid, buttonDisabled: this.startAiGameBtn.disabled });
         
         return isValid;
     }
