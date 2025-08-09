@@ -6,6 +6,7 @@ class TicTacToeMultiplayerClient {
         this.gameState = null;
         this.pollInterval = null;
         this.pendingAction = null; // For confirmation modal
+        this.selectedDifficulty = 'medium';
         
         this.initializeElements();
         this.attachEventListeners();
@@ -19,6 +20,7 @@ class TicTacToeMultiplayerClient {
         this.tictactoeMenuScreen = document.getElementById('tictactoe-menu-screen');
         this.createScreen = document.getElementById('create-screen');
         this.joinScreen = document.getElementById('join-screen');
+        this.vsAiScreen = document.getElementById('vs-ai-screen');
         this.gameScreen = document.getElementById('game-screen');
         
         // Welcome elements
@@ -30,6 +32,7 @@ class TicTacToeMultiplayerClient {
         this.backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
         
         // TicTacToe menu elements
+        this.tictactoeVsAiBtn = document.getElementById('tictactoe-vs-ai-btn');
         this.tictactoeCreateBtn = document.getElementById('tictactoe-create-btn');
         this.tictactoeJoinBtn = document.getElementById('tictactoe-join-btn');
         this.backToGamesBtn = document.getElementById('back-to-games-btn');
@@ -40,13 +43,17 @@ class TicTacToeMultiplayerClient {
         this.joinPlayerNameInput = document.getElementById('join-player-name');
         this.joinGameIdInput = document.getElementById('join-game-id');
         this.joinGameBtn = document.getElementById('join-game-btn');
+        this.aiPlayerNameInput = document.getElementById('ai-player-name');
+        this.startAiGameBtn = document.getElementById('start-ai-game-btn');
         this.backToChoiceBtn = document.getElementById('back-to-choice-btn');
         this.backToChoiceBtn2 = document.getElementById('back-to-choice-btn2');
+        this.backToChoiceBtn3 = document.getElementById('back-to-choice-btn3');
         
         // Feedback elements
         this.createNameFeedback = document.getElementById('create-name-feedback');
         this.joinNameFeedback = document.getElementById('join-name-feedback');
         this.joinIdFeedback = document.getElementById('join-id-feedback');
+        this.aiNameFeedback = document.getElementById('ai-name-feedback');
         
         // Game elements
         this.gameBoard = document.getElementById('game-board');
@@ -77,6 +84,8 @@ class TicTacToeMultiplayerClient {
         this.backToWelcomeBtn.addEventListener('click', () => this.showWelcomeScreen());
         this.backToChoiceBtn.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn2.addEventListener('click', () => this.showTicTacToeMenu());
+        this.backToChoiceBtn3.addEventListener('click', () => this.showTicTacToeMenu());
+        this.tictactoeVsAiBtn.addEventListener('click', () => this.showVsAiScreen());
         this.tictactoeCreateBtn.addEventListener('click', () => this.showCreateScreen());
         this.tictactoeJoinBtn.addEventListener('click', () => this.showJoinScreen());
         this.backToGamesBtn.addEventListener('click', () => this.showChoiceScreen());
@@ -84,11 +93,18 @@ class TicTacToeMultiplayerClient {
         // Form events
         this.createGameBtn.addEventListener('click', () => this.createGame());
         this.joinGameBtn.addEventListener('click', () => this.joinGame());
+        this.startAiGameBtn.addEventListener('click', () => this.startAiGame());
         
         // Input validation
         this.createPlayerNameInput.addEventListener('input', () => this.validateCreateForm());
         this.joinPlayerNameInput.addEventListener('input', () => this.validateJoinForm());
         this.joinGameIdInput.addEventListener('input', () => this.validateJoinForm());
+        this.aiPlayerNameInput.addEventListener('input', () => this.validateAiForm());
+
+        // Difficulty selection
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => this.selectDifficulty(e.target.closest('.difficulty-btn')));
+        });
         
         // Game events
         this.copyIdBtn.addEventListener('click', () => this.copyGameId());
@@ -240,6 +256,12 @@ class TicTacToeMultiplayerClient {
         this.joinPlayerNameInput.focus();
     }
 
+    showVsAiScreen() {
+        this.hideAllScreens();
+        this.vsAiScreen.classList.remove('hidden');
+        this.aiPlayerNameInput.focus();
+    }
+
     showGameScreen() {
         this.hideAllScreens();
         this.gameScreen.classList.remove('hidden');
@@ -256,7 +278,7 @@ class TicTacToeMultiplayerClient {
     }
 
     hideAllScreens() {
-        [this.welcomeScreen, this.choiceScreen, this.tictactoeMenuScreen, this.createScreen, this.joinScreen, this.gameScreen].forEach(screen => {
+        [this.welcomeScreen, this.choiceScreen, this.tictactoeMenuScreen, this.createScreen, this.joinScreen, this.vsAiScreen, this.gameScreen].forEach(screen => {
             screen.classList.add('hidden');
         });
     }
@@ -269,18 +291,79 @@ class TicTacToeMultiplayerClient {
         this.createPlayerNameInput.value = '';
         this.joinPlayerNameInput.value = '';
         this.joinGameIdInput.value = '';
+        this.aiPlayerNameInput.value = '';
         
         // Reset validation
-        [this.createPlayerNameInput, this.joinPlayerNameInput, this.joinGameIdInput].forEach(input => {
+        [this.createPlayerNameInput, this.joinPlayerNameInput, this.joinGameIdInput, this.aiPlayerNameInput].forEach(input => {
             input.classList.remove('valid', 'invalid');
         });
-        [this.createNameFeedback, this.joinNameFeedback, this.joinIdFeedback].forEach(feedback => {
+        [this.createNameFeedback, this.joinNameFeedback, this.joinIdFeedback, this.aiNameFeedback].forEach(feedback => {
             feedback.textContent = '';
             feedback.classList.remove('success', 'error');
         });
         
         this.createGameBtn.disabled = true;
         this.joinGameBtn.disabled = true;
+        this.startAiGameBtn.disabled = true;
+    }
+
+    selectDifficulty(btn) {
+        // Remove active class from all buttons
+        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+        // Add active class to clicked button
+        btn.classList.add('active');
+        // Store selected difficulty
+        this.selectedDifficulty = btn.dataset.difficulty;
+        // Validate form
+        this.validateAiForm();
+    }
+
+    validateAiForm() {
+        const playerName = this.aiPlayerNameInput.value.trim();
+        const isValid = this.validatePlayerName(playerName);
+        
+        this.updateInputValidation(this.aiPlayerNameInput, this.aiNameFeedback, isValid);
+        this.startAiGameBtn.disabled = !isValid.valid;
+        
+        return isValid;
+    }
+
+    async startAiGame() {
+        const validation = this.validateAiForm();
+        if (!validation.valid) {
+            this.showError(validation.message);
+            return;
+        }
+
+        try {
+            this.startAiGameBtn.disabled = true;
+            this.startAiGameBtn.textContent = 'Starting...';
+
+            const response = await this.apiCall('/game/ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    playerName: this.aiPlayerNameInput.value.trim(),
+                    difficulty: this.selectedDifficulty
+                })
+            });
+
+            this.gameId = response.gameId;
+            this.playerId = response.playerId;
+            this.playerName = this.aiPlayerNameInput.value.trim();
+            this.gameState = response;
+            
+            this.showGameScreen();
+            this.updateUI();
+            this.showSuccess(`AI game started! Difficulty: ${this.selectedDifficulty}`);
+
+        } catch (error) {
+            console.error('Failed to start AI game:', error);
+            this.showError(error.message || 'Failed to start AI game');
+        } finally {
+            this.startAiGameBtn.disabled = false;
+            this.startAiGameBtn.textContent = 'Start Game';
+        }
     }
 
     async apiCall(endpoint, options = {}) {

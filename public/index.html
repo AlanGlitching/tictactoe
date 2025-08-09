@@ -47,7 +47,12 @@
         <div id="tictactoe-menu-screen" class="screen hidden">
             <div class="choice-content">
                 <h2>TicTacToe</h2>
-                <div class="choice-buttons">
+                <div class="choice-buttons-grid">
+                    <button id="tictactoe-vs-ai-btn" class="btn btn-success choice-btn">
+                        <div class="choice-icon">🤖</div>
+                        <div class="choice-title">VS AI</div>
+                        <div class="choice-desc">Play against smart computer</div>
+                    </button>
                     <button id="tictactoe-create-btn" class="btn btn-primary choice-btn">
                         <div class="choice-icon">➕</div>
                         <div class="choice-title">Create Game</div>
@@ -94,6 +99,41 @@
                     <button id="join-game-btn" class="btn btn-secondary" disabled>Join Game</button>
                 </div>
                 <button id="back-to-choice-btn2" class="btn btn-link">← Back to Options</button>
+            </div>
+        </div>
+
+        <!-- VS AI Form -->
+        <div id="vs-ai-screen" class="screen hidden">
+            <div class="form-content">
+                <h2>TicTacToe - VS AI</h2>
+                <div class="form-group">
+                    <div class="input-container">
+                        <input type="text" id="ai-player-name" placeholder="Enter your name (2-15 characters)" maxlength="15" minlength="2" required>
+                        <span class="input-feedback" id="ai-name-feedback"></span>
+                    </div>
+                    <div class="difficulty-selection">
+                        <h3>Choose Difficulty</h3>
+                        <div class="difficulty-buttons">
+                            <button type="button" class="btn btn-outline difficulty-btn" data-difficulty="easy">
+                                <div class="difficulty-icon">😊</div>
+                                <div class="difficulty-name">Easy</div>
+                                <div class="difficulty-desc">Random moves</div>
+                            </button>
+                            <button type="button" class="btn btn-outline difficulty-btn active" data-difficulty="medium">
+                                <div class="difficulty-icon">🤔</div>
+                                <div class="difficulty-name">Medium</div>
+                                <div class="difficulty-desc">Smart moves</div>
+                            </button>
+                            <button type="button" class="btn btn-outline difficulty-btn" data-difficulty="hard">
+                                <div class="difficulty-icon">🧠</div>
+                                <div class="difficulty-name">Hard</div>
+                                <div class="difficulty-desc">Unbeatable AI</div>
+                            </button>
+                        </div>
+                    </div>
+                    <button id="start-ai-game-btn" class="btn btn-success" disabled>Start Game</button>
+                </div>
+                <button id="back-to-choice-btn3" class="btn btn-link">← Back to Options</button>
             </div>
         </div>
 

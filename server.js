@@ -16,7 +16,7 @@ const games = new Map();
 
 // Game logic class
 class TicTacToeGame {
-  constructor() {
+  constructor(isAI = false, aiDifficulty = 'medium') {
     this.board = Array(9).fill(null);
     this.currentPlayer = 'X';
     this.gameStatus = 'waiting'; // 'waiting', 'playing', 'won', 'draw'
@@ -26,6 +26,19 @@ class TicTacToeGame {
     this.playerCount = 0;
     this.createdAt = new Date();
     this.rematchRequests = new Set(); // Track rematch requests
+    this.isAI = isAI;
+    this.aiDifficulty = aiDifficulty;
+    this.aiPlayerId = isAI ? 'ai-player' : null;
+    
+    // If AI game, add AI player as O
+    if (isAI) {
+      this.players['ai-player'] = {
+        name: `AI (${aiDifficulty})`,
+        symbol: 'O',
+        joined: true
+      };
+      this.playerCount = 1;
+    }
   }
 
   addPlayer(playerId, playerName) {
@@ -116,6 +129,147 @@ class TicTacToeGame {
     this.rematchRequests = new Set(); // Track who requested rematch
   }
 
+  // AI move logic
+  makeAIMove() {
+    if (!this.isAI || this.currentPlayer !== 'O' || this.gameStatus !== 'playing') {
+      return false;
+    }
+
+    let move;
+    switch (this.aiDifficulty) {
+      case 'easy':
+        move = this.getRandomMove();
+        break;
+      case 'medium':
+        move = this.getMediumMove();
+        break;
+      case 'hard':
+        move = this.getHardMove();
+        break;
+      default:
+        move = this.getMediumMove();
+    }
+
+    if (move !== -1) {
+      return this.makeMove(move, this.aiPlayerId);
+    }
+    return false;
+  }
+
+  getRandomMove() {
+    const availableMoves = this.board
+      .map((cell, index) => cell === null ? index : null)
+      .filter(val => val !== null);
+    
+    if (availableMoves.length === 0) return -1;
+    return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+  }
+
+  getMediumMove() {
+    // Try to win first
+    for (let i = 0; i < 9; i++) {
+      if (this.board[i] === null) {
+        this.board[i] = 'O';
+        if (this.checkWinnerOnBoard(this.board)) {
+          this.board[i] = null;
+          return i;
+        }
+        this.board[i] = null;
+      }
+    }
+
+    // Block player from winning
+    for (let i = 0; i < 9; i++) {
+      if (this.board[i] === null) {
+        this.board[i] = 'X';
+        if (this.checkWinnerOnBoard(this.board)) {
+          this.board[i] = null;
+          return i;
+        }
+        this.board[i] = null;
+      }
+    }
+
+    // Take center if available
+    if (this.board[4] === null) return 4;
+
+    // Take corners
+    const corners = [0, 2, 6, 8];
+    for (const corner of corners) {
+      if (this.board[corner] === null) return corner;
+    }
+
+    // Take any available move
+    return this.getRandomMove();
+  }
+
+  getHardMove() {
+    return this.minimax(this.board, 'O').index;
+  }
+
+  minimax(board, player) {
+    const availableMoves = board
+      .map((cell, index) => cell === null ? index : null)
+      .filter(val => val !== null);
+
+    // Create a copy for checking
+    const tempBoard = [...board];
+    const winner = this.checkWinnerOnBoard(tempBoard);
+    
+    if (winner === 'O') return { score: 1 };
+    if (winner === 'X') return { score: -1 };
+    if (availableMoves.length === 0) return { score: 0 };
+
+    const moves = [];
+    
+    for (const move of availableMoves) {
+      const moveObj = { index: move };
+      tempBoard[move] = player;
+      
+      const result = this.minimax(tempBoard, player === 'O' ? 'X' : 'O');
+      moveObj.score = result.score;
+      
+      tempBoard[move] = null;
+      moves.push(moveObj);
+    }
+
+    let bestMove;
+    if (player === 'O') {
+      let bestScore = -Infinity;
+      for (const move of moves) {
+        if (move.score > bestScore) {
+          bestScore = move.score;
+          bestMove = move;
+        }
+      }
+    } else {
+      let bestScore = Infinity;
+      for (const move of moves) {
+        if (move.score < bestScore) {
+          bestScore = move.score;
+          bestMove = move;
+        }
+      }
+    }
+
+    return bestMove;
+  }
+
+  checkWinnerOnBoard(board) {
+    const lines = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+      [0, 4, 8], [2, 4, 6] // diagonals
+    ];
+
+    for (const [a, b, c] of lines) {
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        return board[a];
+      }
+    }
+    return null;
+  }
+
   requestRematch(playerId) {
     if (!this.players[playerId]) {
       return { success: false, error: 'Player not in game' };
@@ -173,6 +327,31 @@ app.post('/api/game', (req, res) => {
   res.json({
     gameId,
     ...game.getState()
+  });
+});
+
+// Create a new AI game
+app.post('/api/game/ai', (req, res) => {
+  const { playerName, difficulty = 'medium' } = req.body;
+  
+  if (!playerName || playerName.length < 2 || playerName.length > 15) {
+    return res.status(400).json({ error: 'Player name must be 2-15 characters' });
+  }
+
+  const gameId = uuidv4();
+  const playerId = uuidv4();
+  const game = new TicTacToeGame(true, difficulty);
+  
+  // Add human player as X
+  game.addPlayer(playerId, playerName);
+  game.gameStatus = 'playing'; // Start immediately since AI is already joined
+  
+  games.set(gameId, game);
+  
+  res.json({
+    gameId,
+    playerId,
+    ...game.getState(playerId)
   });
 });
 
@@ -263,6 +442,13 @@ app.post('/api/game/:gameId/move', (req, res) => {
   
   if (!result.success) {
     return res.status(400).json({ error: result.error });
+  }
+
+  // If it's an AI game and it's now AI's turn, make AI move
+  if (game.isAI && game.currentPlayer === 'O' && game.gameStatus === 'playing') {
+    setTimeout(() => {
+      game.makeAIMove();
+    }, 500); // Small delay to make AI move feel natural
   }
   
   res.json({
