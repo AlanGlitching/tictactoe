@@ -5,6 +5,7 @@ class TicTacToeMultiplayerClient {
         this.playerName = null;
         this.gameState = null;
         this.pollInterval = null;
+        this.pendingAction = null; // For confirmation modal
         
         this.initializeElements();
         this.attachEventListeners();
@@ -23,6 +24,11 @@ class TicTacToeMultiplayerClient {
         this.joinGameIdInput = document.getElementById('join-game-id');
         this.joinGameBtn = document.getElementById('join-game-btn');
         
+        // Feedback elements
+        this.createNameFeedback = document.getElementById('create-name-feedback');
+        this.joinNameFeedback = document.getElementById('join-name-feedback');
+        this.joinIdFeedback = document.getElementById('join-id-feedback');
+        
         // Game elements
         this.gameBoard = document.getElementById('game-board');
         this.cells = document.querySelectorAll('.cell');
@@ -32,8 +38,16 @@ class TicTacToeMultiplayerClient {
         this.currentGameIdSpan = document.getElementById('current-game-id');
         this.playersListDiv = document.getElementById('players-list');
         this.copyIdBtn = document.getElementById('copy-id-btn');
+        this.rematchBtn = document.getElementById('rematch-btn');
         this.resetGameBtn = document.getElementById('reset-game-btn');
         this.leaveGameBtn = document.getElementById('leave-game-btn');
+        
+        // Modal elements
+        this.confirmationModal = document.getElementById('confirmation-modal');
+        this.modalTitle = document.getElementById('modal-title');
+        this.modalMessage = document.getElementById('modal-message');
+        this.modalConfirm = document.getElementById('modal-confirm');
+        this.modalCancel = document.getElementById('modal-cancel');
     }
 
     attachEventListeners() {
@@ -41,19 +55,36 @@ class TicTacToeMultiplayerClient {
         this.createGameBtn.addEventListener('click', () => this.createGame());
         this.joinGameBtn.addEventListener('click', () => this.joinGame());
         
+        // Input validation
+        this.createPlayerNameInput.addEventListener('input', () => this.validateCreateForm());
+        this.joinPlayerNameInput.addEventListener('input', () => this.validateJoinForm());
+        this.joinGameIdInput.addEventListener('input', () => this.validateJoinForm());
+        
         // Game events
         this.copyIdBtn.addEventListener('click', () => this.copyGameId());
-        this.resetGameBtn.addEventListener('click', () => this.resetGame());
-        this.leaveGameBtn.addEventListener('click', () => this.leaveGame());
+        this.rematchBtn.addEventListener('click', () => this.requestRematch());
+        this.resetGameBtn.addEventListener('click', () => this.confirmAction('reset'));
+        this.leaveGameBtn.addEventListener('click', () => this.confirmAction('leave'));
+        
+        // Modal events
+        this.modalConfirm.addEventListener('click', () => this.executeConfirmedAction());
+        this.modalCancel.addEventListener('click', () => this.hideModal());
+        
+        // Close modal on outside click
+        this.confirmationModal.addEventListener('click', (e) => {
+            if (e.target === this.confirmationModal) {
+                this.hideModal();
+            }
+        });
         
         // Enter key support
         this.createPlayerNameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.createGame();
+            if (e.key === 'Enter' && this.createGameBtn.disabled === false) this.createGame();
         });
         
         [this.joinPlayerNameInput, this.joinGameIdInput].forEach(input => {
             input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') this.joinGame();
+                if (e.key === 'Enter' && this.joinGameBtn.disabled === false) this.joinGame();
             });
         });
 
@@ -61,6 +92,98 @@ class TicTacToeMultiplayerClient {
         this.cells.forEach((cell, index) => {
             cell.addEventListener('click', () => this.makeMove(index));
         });
+    }
+
+    validateCreateForm() {
+        const name = this.createPlayerNameInput.value.trim();
+        const isValid = this.validatePlayerName(name);
+        
+        this.updateInputValidation(this.createPlayerNameInput, this.createNameFeedback, isValid, name);
+        this.createGameBtn.disabled = !isValid;
+    }
+
+    validateJoinForm() {
+        const name = this.joinPlayerNameInput.value.trim();
+        const gameId = this.joinGameIdInput.value.trim();
+        
+        const nameValid = this.validatePlayerName(name);
+        const gameIdValid = this.validateGameId(gameId);
+        
+        this.updateInputValidation(this.joinPlayerNameInput, this.joinNameFeedback, nameValid, name);
+        this.updateInputValidation(this.joinGameIdInput, this.joinIdFeedback, gameIdValid, gameId);
+        
+        this.joinGameBtn.disabled = !(nameValid && gameIdValid);
+    }
+
+    validatePlayerName(name) {
+        if (name.length < 2) return { valid: false, message: 'Name too short (min 2 characters)' };
+        if (name.length > 15) return { valid: false, message: 'Name too long (max 15 characters)' };
+        if (!/^[a-zA-Z0-9\s-_]+$/.test(name)) return { valid: false, message: 'Only letters, numbers, spaces, - and _ allowed' };
+        return { valid: true, message: '✓ Valid name' };
+    }
+
+    validateGameId(gameId) {
+        if (gameId.length === 0) return { valid: false, message: 'Game ID required' };
+        if (gameId.length < 8) return { valid: false, message: 'Game ID too short' };
+        if (!/^[a-zA-Z0-9-]+$/.test(gameId)) return { valid: false, message: 'Invalid Game ID format' };
+        return { valid: true, message: '✓ Valid Game ID' };
+    }
+
+    updateInputValidation(input, feedback, validation, value) {
+        input.classList.remove('valid', 'invalid');
+        feedback.classList.remove('success', 'error');
+        
+        if (value.length > 0) {
+            if (validation.valid) {
+                input.classList.add('valid');
+                feedback.classList.add('success');
+            } else {
+                input.classList.add('invalid');
+                feedback.classList.add('error');
+            }
+            feedback.textContent = validation.message;
+        } else {
+            feedback.textContent = '';
+        }
+    }
+
+    showModal(title, message, confirmText = 'Confirm') {
+        this.modalTitle.textContent = title;
+        this.modalMessage.textContent = message;
+        this.modalConfirm.textContent = confirmText;
+        this.confirmationModal.classList.remove('hidden');
+    }
+
+    hideModal() {
+        this.confirmationModal.classList.add('hidden');
+        this.pendingAction = null;
+    }
+
+    confirmAction(action) {
+        this.pendingAction = action;
+        
+        if (action === 'leave') {
+            this.showModal(
+                'Leave Game',
+                'Are you sure you want to leave the game? Your opponent will be notified.',
+                'Leave Game'
+            );
+        } else if (action === 'reset') {
+            this.showModal(
+                'Reset Game',
+                'Are you sure you want to reset the game? This will clear the board and start over.',
+                'Reset Game'
+            );
+        }
+    }
+
+    executeConfirmedAction() {
+        if (this.pendingAction === 'leave') {
+            this.leaveGame();
+        } else if (this.pendingAction === 'reset') {
+            this.resetGame();
+        }
+        this.hideModal();
     }
 
     showLobby() {
@@ -84,6 +207,18 @@ class TicTacToeMultiplayerClient {
         this.createPlayerNameInput.value = '';
         this.joinPlayerNameInput.value = '';
         this.joinGameIdInput.value = '';
+        
+        // Reset validation
+        [this.createPlayerNameInput, this.joinPlayerNameInput, this.joinGameIdInput].forEach(input => {
+            input.classList.remove('valid', 'invalid');
+        });
+        [this.createNameFeedback, this.joinNameFeedback, this.joinIdFeedback].forEach(feedback => {
+            feedback.textContent = '';
+            feedback.classList.remove('success', 'error');
+        });
+        
+        this.createGameBtn.disabled = true;
+        this.joinGameBtn.disabled = true;
     }
 
     async apiCall(endpoint, options = {}) {
@@ -111,8 +246,10 @@ class TicTacToeMultiplayerClient {
 
     async createGame() {
         const playerName = this.createPlayerNameInput.value.trim();
-        if (!playerName) {
-            this.showError('Please enter your name');
+        const validation = this.validatePlayerName(playerName);
+        
+        if (!validation.valid) {
+            this.showError(validation.message);
             return;
         }
 
@@ -133,7 +270,7 @@ class TicTacToeMultiplayerClient {
             
             this.showGame();
             this.updateUI();
-            this.showSuccess(`Game created! Share ID: ${this.gameId}`);
+            this.showSuccess(`Game created! Share ID: ${this.gameId.substring(0, 8)}...`);
         } catch (error) {
             console.error('Failed to create game:', error);
         }
@@ -143,13 +280,16 @@ class TicTacToeMultiplayerClient {
         const playerName = this.joinPlayerNameInput.value.trim();
         const gameId = this.joinGameIdInput.value.trim();
         
-        if (!playerName) {
-            this.showError('Please enter your name');
+        const nameValidation = this.validatePlayerName(playerName);
+        const gameIdValidation = this.validateGameId(gameId);
+        
+        if (!nameValidation.valid) {
+            this.showError(nameValidation.message);
             return;
         }
         
-        if (!gameId) {
-            this.showError('Please enter a Game ID');
+        if (!gameIdValidation.valid) {
+            this.showError(gameIdValidation.message);
             return;
         }
 
@@ -202,6 +342,31 @@ class TicTacToeMultiplayerClient {
             this.updateUI();
         } catch (error) {
             console.error('Failed to make move:', error);
+        }
+    }
+
+    async requestRematch() {
+        if (!this.gameId || !this.playerId) {
+            this.showError('Not connected to a game');
+            return;
+        }
+
+        try {
+            const result = await this.apiCall(`/game/${this.gameId}/rematch`, {
+                method: 'POST',
+                body: JSON.stringify({ playerId: this.playerId })
+            });
+            
+            this.gameState = result;
+            this.updateUI();
+            
+            if (result.rematchStarted) {
+                this.showSuccess('Rematch started! New game begins.');
+            } else {
+                this.showSuccess(`Rematch requested! Waiting for ${result.waitingFor} more player(s).`);
+            }
+        } catch (error) {
+            console.error('Failed to request rematch:', error);
         }
     }
 
@@ -371,8 +536,28 @@ class TicTacToeMultiplayerClient {
     }
 
     updateControls() {
-        const canReset = this.gameState && (this.gameState.gameStatus === 'won' || this.gameState.gameStatus === 'draw');
+        const gameEnded = this.gameState && (this.gameState.gameStatus === 'won' || this.gameState.gameStatus === 'draw');
+        const canReset = gameEnded;
+        const canRematch = gameEnded && this.gameState.playerCount === 2;
+        
         this.resetGameBtn.disabled = !canReset;
+        this.rematchBtn.disabled = !canRematch;
+        
+        // Update rematch button text
+        if (canRematch) {
+            if (this.gameState.youRequestedRematch) {
+                if (this.gameState.rematchNeeded > 0) {
+                    this.rematchBtn.textContent = `Waiting (${this.gameState.rematchNeeded} more)`;
+                    this.rematchBtn.disabled = true;
+                } else {
+                    this.rematchBtn.textContent = 'Rematch';
+                }
+            } else {
+                this.rematchBtn.textContent = 'Rematch';
+            }
+        } else {
+            this.rematchBtn.textContent = 'Rematch';
+        }
     }
 
     startPolling() {

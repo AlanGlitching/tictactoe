@@ -25,6 +25,7 @@ class TicTacToeGame {
     this.players = {}; // Store player info: {playerId: {name, symbol, joined}}
     this.playerCount = 0;
     this.createdAt = new Date();
+    this.rematchRequests = new Set(); // Track rematch requests
   }
 
   addPlayer(playerId, playerName) {
@@ -112,6 +113,27 @@ class TicTacToeGame {
     this.gameStatus = this.playerCount === 2 ? 'playing' : 'waiting';
     this.winner = null;
     this.winningLine = null;
+    this.rematchRequests = new Set(); // Track who requested rematch
+  }
+
+  requestRematch(playerId) {
+    if (!this.players[playerId]) {
+      return { success: false, error: 'Player not in game' };
+    }
+
+    if (this.gameStatus === 'playing') {
+      return { success: false, error: 'Game is still in progress' };
+    }
+
+    this.rematchRequests.add(playerId);
+
+    // If both players want rematch, reset the game
+    if (this.rematchRequests.size === this.playerCount && this.playerCount === 2) {
+      this.reset();
+      return { success: true, rematchStarted: true };
+    }
+
+    return { success: true, rematchStarted: false, waitingFor: this.playerCount - this.rematchRequests.size };
   }
 
   getState(playerId = null) {
@@ -125,12 +147,15 @@ class TicTacToeGame {
       players: Object.keys(this.players).map(id => ({
         name: this.players[id].name,
         symbol: this.players[id].symbol
-      }))
+      })),
+      rematchRequests: this.rematchRequests.size,
+      rematchNeeded: this.playerCount - this.rematchRequests.size
     };
 
     if (playerId && this.players[playerId]) {
       baseState.yourSymbol = this.players[playerId].symbol;
       baseState.yourTurn = this.players[playerId].symbol === this.currentPlayer;
+      baseState.youRequestedRematch = this.rematchRequests.has(playerId);
     }
 
     return baseState;
@@ -266,6 +291,35 @@ app.post('/api/game/:gameId/reset', (req, res) => {
   res.json({
     gameId,
     playerId,
+    ...game.getState(playerId)
+  });
+});
+
+// Request rematch
+app.post('/api/game/:gameId/rematch', (req, res) => {
+  const { gameId } = req.params;
+  const { playerId } = req.body;
+  const game = games.get(gameId);
+  
+  if (!game) {
+    return res.status(404).json({ error: 'Game not found' });
+  }
+  
+  if (!playerId || !game.players[playerId]) {
+    return res.status(403).json({ error: 'Only players in the game can request rematch' });
+  }
+  
+  const result = game.requestRematch(playerId);
+  
+  if (!result.success) {
+    return res.status(400).json({ error: result.error });
+  }
+  
+  res.json({
+    gameId,
+    playerId,
+    rematchStarted: result.rematchStarted,
+    waitingFor: result.waitingFor,
     ...game.getState(playerId)
   });
 });
