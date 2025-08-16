@@ -318,8 +318,8 @@ class TicTacToeGame {
       return { success: false, error: 'Game is still in progress' };
     }
 
-    // For AI and matchmaking games, start rematch immediately
-    if (this.isAI || this.isMatchmaking) {
+    // For AI games, start rematch immediately
+    if (this.isAI) {
       this.reset();
       return { success: true, rematchStarted: true, waitingFor: 0 };
     }
