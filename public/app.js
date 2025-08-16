@@ -1209,8 +1209,30 @@ class TicTacToeMultiplayerClient {
     // Handle page unload to disconnect player
     window.addEventListener('beforeunload', () => {
         if (window.gameClient && window.gameClient.gameId && window.gameClient.playerId) {
-            // Send disconnect request (may not complete due to page unload)
-            navigator.sendBeacon(`/api/game/${window.gameClient.gameId}/disconnect`, 
-                JSON.stringify({ playerId: window.gameClient.playerId }));
+            console.log('Page unloading, disconnecting player:', window.gameClient.playerId);
+            
+            // Try to send disconnect request
+            try {
+                // Use sendBeacon for reliability
+                const success = navigator.sendBeacon(
+                    `/api/game/${window.gameClient.gameId}/disconnect`,
+                    JSON.stringify({ playerId: window.gameClient.playerId })
+                );
+                
+                if (success) {
+                    console.log('Disconnect request sent successfully');
+                } else {
+                    console.log('Failed to send disconnect request');
+                }
+            } catch (error) {
+                console.error('Error sending disconnect request:', error);
+            }
+        }
+    });
+    
+    // Also handle page visibility change (tab switching, minimizing)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && window.gameClient && window.gameClient.gameId && window.gameClient.playerId) {
+            console.log('Page hidden, player may have left');
         }
     }); 

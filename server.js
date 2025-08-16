@@ -376,6 +376,15 @@ app.post('/api/matchmaking/join', (req, res) => {
     return res.status(400).json({ error: 'Player name must be 2-15 characters' });
   }
 
+  // Check if this player is already in the queue
+  for (const [existingPlayerId, existingPlayerData] of matchmakingQueue.entries()) {
+    if (existingPlayerData.playerName === playerName.trim()) {
+      return res.status(400).json({ 
+        error: 'You are already in the matchmaking queue. Please wait for an opponent.' 
+      });
+    }
+  }
+
   const playerId = uuidv4();
   matchmakingQueue.set(playerId, {
     playerName: playerName.trim(),
@@ -748,9 +757,45 @@ app.post('/api/game/:gameId/disconnect', (req, res) => {
   // Remove the player and pause the game
   game.removePlayer(playerId);
   
+  console.log(`Game ${gameId} state after disconnect:`, {
+    gameStatus: game.gameStatus,
+    pausedBy: game.pausedBy,
+    playerCount: game.playerCount
+  });
+  
   res.json({ 
     success: true, 
     message: 'Player disconnected',
+    gameState: game.getState()
+  });
+});
+
+// Test endpoint to manually pause a game (for testing player left screen)
+app.post('/api/game/:gameId/test-pause', (req, res) => {
+  const { gameId } = req.params;
+  const { playerId } = req.body;
+  
+  const game = games.get(gameId);
+  if (!game) {
+    return res.status(404).json({ error: 'Game not found' });
+  }
+  
+  console.log(`Testing pause for game ${gameId} by player ${playerId}`);
+  
+  // Manually pause the game
+  game.gameStatus = 'paused';
+  game.pausedBy = playerId;
+  game.pausedAt = new Date();
+  
+  console.log(`Game ${gameId} manually paused:`, {
+    gameStatus: game.gameStatus,
+    pausedBy: game.pausedBy,
+    playerCount: game.playerCount
+  });
+  
+  res.json({ 
+    success: true, 
+    message: 'Game manually paused for testing',
     gameState: game.getState()
   });
 });
@@ -785,6 +830,14 @@ function processMatchmakingQueue() {
     // Take the first two players
     const [player1Id, player1Data] = players[0];
     const [player2Id, player2Data] = players[1];
+    
+    // Prevent self-matching by checking if they're the same player
+    if (player1Id === player2Id) {
+      console.log(`Preventing self-match for player ${player1Data.playerName}`);
+      // Remove the duplicate entry and return null
+      matchmakingQueue.delete(player1Id);
+      return null;
+    }
     
     // Remove both players from queue
     matchmakingQueue.delete(player1Id);
@@ -848,6 +901,7 @@ app.listen(PORT, () => {
   console.log('  POST /api/game/:gameId/reset - Reset game');
   console.log('  POST /api/game/:gameId/resume - Resume paused game');
   console.log('  POST /api/game/:gameId/disconnect - Player disconnect');
+  console.log('  POST /api/game/:gameId/test-pause - Test pause (for debugging)');
   console.log('  DELETE /api/game/:gameId - Delete game');
   console.log('Matchmaking endpoints:');
   console.log('  POST /api/matchmaking/join - Join matchmaking queue');
