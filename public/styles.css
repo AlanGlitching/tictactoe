@@ -796,6 +796,65 @@ footer {
     100% { box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
 }
 
+/* Rematch popup styles */
+.rematch-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.rematch-popup-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+}
+
+.rematch-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.rematch-popup h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 24px;
+}
+
+.rematch-popup p {
+    margin: 0 0 25px 0;
+    color: #666;
+    font-size: 16px;
+}
+
+.rematch-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.rematch-buttons .btn {
+    padding: 12px 24px;
+    font-size: 16px;
+    min-width: 120px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 .btn-primary:not(:disabled):not(:hover) {
     animation: pulse 2s ease-in-out infinite;
 }

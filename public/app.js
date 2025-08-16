@@ -992,6 +992,11 @@ class TicTacToeMultiplayerClient {
         if (gamePaused) {
             this.showMessage('Game paused - waiting for opponent to return', 'info');
         }
+        
+        // Show rematch request popup if opponent requested rematch
+        if (this.gameState && this.gameState.rematchRequests > 0 && !this.gameState.youRequestedRematch) {
+            this.showRematchRequestPopup();
+        }
     }
 
     startPolling() {
@@ -1065,6 +1070,49 @@ class TicTacToeMultiplayerClient {
                 }
             }, 300);
         }, 3000);
+    }
+
+    showRematchRequestPopup() {
+        // Remove any existing rematch popup
+        const existingPopup = document.getElementById('rematch-request-popup');
+        if (existingPopup) {
+            existingPopup.remove();
+        }
+
+        const popup = document.createElement('div');
+        popup.id = 'rematch-request-popup';
+        popup.className = 'rematch-popup';
+        
+        popup.innerHTML = `
+            <div class="rematch-popup-content">
+                <div class="rematch-icon">🔄</div>
+                <h3>Rematch Request!</h3>
+                <p>Your opponent wants to play again!</p>
+                <div class="rematch-buttons">
+                    <button class="btn btn-success" id="accept-rematch-btn">Accept Rematch</button>
+                    <button class="btn btn-secondary" id="decline-rematch-btn">Decline</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(popup);
+
+        // Add event listeners
+        document.getElementById('accept-rematch-btn').addEventListener('click', () => {
+            this.requestRematch();
+            popup.remove();
+        });
+
+        document.getElementById('decline-rematch-btn').addEventListener('click', () => {
+            popup.remove();
+        });
+
+        // Auto-remove after 10 seconds if not responded to
+        setTimeout(() => {
+            if (popup.parentNode) {
+                popup.remove();
+            }
+        }, 10000);
     }
 }
 
