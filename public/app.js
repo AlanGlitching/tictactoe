@@ -796,27 +796,31 @@ class TicTacToeMultiplayerClient {
         this.yourNameSpan.textContent = this.playerName;
         this.yourSymbolSpan.textContent = this.gameState.yourSymbol || '?';
         
-        // Hide Game ID for VS AI games since it's not needed
+        // Hide Game ID for VS AI games and matchmaking games since they're not needed
         const gameIdInfo = document.querySelector('.game-id-info');
         
         // Detect AI games by checking if any player name contains "AI"
         const isAIGame = this.gameState && this.gameState.players && 
                          this.gameState.players.some(player => player.name.includes('AI'));
         
+        // Detect matchmaking games
+        const isMatchmakingGame = this.gameState && this.gameState.isMatchmaking;
+        
         console.log('Game ID hiding logic:', {
             gameIdInfo: !!gameIdInfo,
             gameState: !!this.gameState,
             isAI: this.gameState?.isAI,
             isAIGame: isAIGame,
+            isMatchmaking: isMatchmakingGame,
             players: this.gameState?.players?.map(p => p.name),
             gameStatus: this.gameState?.gameStatus
         });
         
         if (gameIdInfo) {
-            if (isAIGame) {
-                // For VS AI games, hide the Game ID section
+            if (isAIGame || isMatchmakingGame) {
+                // For VS AI games and matchmaking games, hide the Game ID section
                 gameIdInfo.style.display = 'none';
-                console.log('Game ID hidden for AI game');
+                console.log(`Game ID hidden for ${isAIGame ? 'AI' : 'matchmaking'} game`);
             } else {
                 // For regular multiplayer games, show the Game ID
                 gameIdInfo.style.display = 'flex';
@@ -941,19 +945,20 @@ class TicTacToeMultiplayerClient {
         const gameEnded = this.gameState && (this.gameState.gameStatus === 'won' || this.gameState.gameStatus === 'draw');
         const gamePaused = this.gameState && this.gameState.gameStatus === 'paused';
         const isAIGame = this.gameState && this.gameState.isAI;
+        const isMatchmakingGame = this.gameState && this.gameState.isMatchmaking;
         
-        // For AI games: no reset button, rematch works immediately
+        // For AI and matchmaking games: no reset button, rematch works immediately
         // For regular games: both reset and rematch work normally
-        const canReset = gameEnded && !isAIGame;
-        const canRematch = gameEnded && (isAIGame || this.gameState.playerCount === 2);
+        const canReset = gameEnded && !isAIGame && !isMatchmakingGame;
+        const canRematch = gameEnded && (isAIGame || isMatchmakingGame || this.gameState.playerCount === 2);
         
         this.resetGameBtn.disabled = !canReset;
         this.rematchBtn.disabled = !canRematch;
         
         // Update rematch button text
         if (canRematch) {
-            if (isAIGame) {
-                // AI games: rematch starts immediately
+            if (isAIGame || isMatchmakingGame) {
+                // AI and matchmaking games: rematch starts immediately
                 this.rematchBtn.textContent = 'New Game';
             } else if (this.gameState.youRequestedRematch) {
                 // Regular games: wait for other player

@@ -33,6 +33,7 @@ class TicTacToeGame {
     this.isAI = isAI;
     this.aiDifficulty = aiDifficulty;
     this.aiPlayerId = isAI ? 'ai-player' : null;
+    this.isMatchmaking = false; // Track if this is a matchmaking game
     this.pausedBy = null; // Track who caused the game to pause
     this.pausedAt = null; // Track when the game was paused
     
@@ -316,8 +317,8 @@ class TicTacToeGame {
       return { success: false, error: 'Game is still in progress' };
     }
 
-    // For AI games, start rematch immediately
-    if (this.isAI) {
+    // For AI and matchmaking games, start rematch immediately
+    if (this.isAI || this.isMatchmaking) {
       this.reset();
       return { success: true, rematchStarted: true, waitingFor: 0 };
     }
@@ -350,7 +351,8 @@ class TicTacToeGame {
       rematchNeeded: this.playerCount - this.rematchRequests.size,
       pausedBy: this.pausedBy,
       pausedAt: this.pausedAt,
-      isAI: this.isAI
+      isAI: this.isAI,
+      isMatchmaking: this.isMatchmaking
     };
 
     if (playerId && this.players[playerId]) {
@@ -392,13 +394,17 @@ app.post('/api/matchmaking/join', (req, res) => {
     const gameId = uuidv4();
     const game = new TicTacToeGame();
     
+    // Mark this as a matchmaking game (not AI, not manual creation)
+    game.isMatchmaking = true;
+    
     // Add both players
     game.addPlayer(playerId, playerName.trim());
     game.addPlayer(match.playerId, match.playerName);
     
     games.set(gameId, game);
     
-    console.log(`Match found! Created game ${gameId} between ${playerName} and ${match.playerName}`);
+    console.log(`Match found! Created game ${gameId} between ${playerName} and ${match.playerName} (Matchmaking)`);
+    console.log(`Game state:`, game.getState(playerId));
     
     res.json({
       success: true,
@@ -406,6 +412,7 @@ app.post('/api/matchmaking/join', (req, res) => {
       gameId,
       playerId,
       opponent: match.playerName,
+      isMatchmaking: true,
       ...game.getState(playerId)
     });
   } else {
