@@ -729,6 +729,32 @@ app.delete('/api/game/:gameId', (req, res) => {
   }
 });
 
+// Player disconnect endpoint
+app.post('/api/game/:gameId/disconnect', (req, res) => {
+  const { gameId } = req.params;
+  const { playerId } = req.body;
+  
+  const game = games.get(gameId);
+  if (!game) {
+    return res.status(404).json({ error: 'Game not found' });
+  }
+  
+  if (!game.players[playerId]) {
+    return res.status(404).json({ error: 'Player not in game' });
+  }
+  
+  console.log(`Player ${playerId} disconnecting from game ${gameId}`);
+  
+  // Remove the player and pause the game
+  game.removePlayer(playerId);
+  
+  res.json({ 
+    success: true, 
+    message: 'Player disconnected',
+    gameState: game.getState()
+  });
+});
+
 // Serve the main HTML file
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -821,6 +847,7 @@ app.listen(PORT, () => {
   console.log('  POST /api/game/:gameId/move - Make a move');
   console.log('  POST /api/game/:gameId/reset - Reset game');
   console.log('  POST /api/game/:gameId/resume - Resume paused game');
+  console.log('  POST /api/game/:gameId/disconnect - Player disconnect');
   console.log('  DELETE /api/game/:gameId - Delete game');
   console.log('Matchmaking endpoints:');
   console.log('  POST /api/matchmaking/join - Join matchmaking queue');

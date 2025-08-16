@@ -1172,6 +1172,15 @@ class TicTacToeMultiplayerClient {
         const existingScreen = document.getElementById('player-left-screen');
         if (existingScreen) return; // Already showing the screen
         
+        // Debug logging for all game states
+        console.log('Checking for player left:', {
+            gameStatus: this.gameState.gameStatus,
+            pausedBy: this.gameState.pausedBy,
+            playerCount: this.gameState.playerCount,
+            isAI: this.gameState.isAI,
+            isMatchmaking: this.gameState.isMatchmaking
+        });
+        
         // Check if game is paused due to player leaving
         if (this.gameState.gameStatus === 'paused' && this.gameState.pausedBy) {
             console.log('Player left detected:', {
@@ -1192,7 +1201,16 @@ class TicTacToeMultiplayerClient {
     }
 }
 
-// Initialize the game when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    new TicTacToeMultiplayerClient();
-}); 
+    // Initialize the game when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        window.gameClient = new TicTacToeMultiplayerClient();
+    });
+    
+    // Handle page unload to disconnect player
+    window.addEventListener('beforeunload', () => {
+        if (window.gameClient && window.gameClient.gameId && window.gameClient.playerId) {
+            // Send disconnect request (may not complete due to page unload)
+            navigator.sendBeacon(`/api/game/${window.gameClient.gameId}/disconnect`, 
+                JSON.stringify({ playerId: window.gameClient.playerId }));
+        }
+    }); 
