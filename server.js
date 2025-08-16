@@ -384,47 +384,25 @@ app.post('/api/matchmaking/join', (req, res) => {
 
   console.log(`Player ${playerName} joined matchmaking queue. Total in queue: ${matchmakingQueue.size}`);
 
-  // Try to find a match immediately
-  const match = findMatch(playerId);
-  if (match) {
-    // Remove both players from queue
-    matchmakingQueue.delete(playerId);
-    matchmakingQueue.delete(match.playerId);
-    
-    // Create a new game
-    const gameId = uuidv4();
-    const game = new TicTacToeGame();
-    
-    // Mark this as a matchmaking game (not AI, not manual creation)
-    game.isMatchmaking = true;
-    
-    // Add both players
-    game.addPlayer(playerId, playerName.trim());
-    game.addPlayer(match.playerId, match.playerName);
-    
-    games.set(gameId, game);
-    
-    // Store the match details so both players can retrieve them
-    pendingMatches.set(gameId, {
-      player1: { id: playerId, name: playerName.trim() },
-      player2: { id: match.playerId, name: match.playerName },
-      game: game
-    });
-    
-    console.log(`Match found! Created game ${gameId} between ${playerName} and ${match.playerName} (Matchmaking)`);
-    console.log(`Game state:`, game.getState(playerId));
+  // Check if we can create a match now
+  const gameId = processMatchmakingQueue();
+  
+  if (gameId) {
+    // A match was created! This player should be able to retrieve it
+    console.log(`Match created for ${playerName}, game ID: ${gameId}`);
     
     res.json({
       success: true,
       matched: true,
       gameId,
       playerId,
-      opponent: match.playerName,
+      opponent: 'Opponent found!',
       isMatchmaking: true,
-      ...game.getState(playerId)
+      message: 'Match found! Check for your game details.'
     });
   } else {
-    // No match found, stay in queue
+    // No match yet, stay in queue
+    console.log(`Player ${playerName} waiting in queue. Total in queue: ${matchmakingQueue.size}`);
     res.json({
       success: true,
       matched: false,
@@ -768,6 +746,47 @@ function findMatch(excludePlayerId) {
         playerName: playerData.playerName
       };
     }
+  }
+  
+  return null;
+}
+
+// Process matchmaking queue to create matches
+function processMatchmakingQueue() {
+  if (matchmakingQueue.size >= 2) {
+    const players = Array.from(matchmakingQueue.entries());
+    
+    // Take the first two players
+    const [player1Id, player1Data] = players[0];
+    const [player2Id, player2Data] = players[1];
+    
+    // Remove both players from queue
+    matchmakingQueue.delete(player1Id);
+    matchmakingQueue.delete(player2Id);
+    
+    // Create a new game
+    const gameId = uuidv4();
+    const game = new TicTacToeGame();
+    
+    // Mark this as a matchmaking game
+    game.isMatchmaking = true;
+    
+    // Add both players
+    game.addPlayer(player1Id, player1Data.playerName);
+    game.addPlayer(player2Id, player2Data.playerName);
+    
+    games.set(gameId, game);
+    
+    // Store the match details so both players can retrieve them
+    pendingMatches.set(gameId, {
+      player1: { id: player1Id, name: player1Data.playerName },
+      player2: { id: player2Id, name: player2Data.playerName },
+      game: game
+    });
+    
+    console.log(`Match created! Game ${gameId} between ${player1Data.playerName} and ${player2Data.playerName} (Matchmaking)`);
+    
+    return gameId;
   }
   
   return null;
