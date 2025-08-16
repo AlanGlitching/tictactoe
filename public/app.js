@@ -691,7 +691,19 @@ class TicTacToeMultiplayerClient {
     updatePlayerInfo() {
         this.yourNameSpan.textContent = this.playerName;
         this.yourSymbolSpan.textContent = this.gameState.yourSymbol || '?';
-        this.currentGameIdSpan.textContent = this.gameId ? this.gameId.substring(0, 8) + '...' : 'None';
+        
+        // Hide Game ID for VS AI games since it's not needed
+        const gameIdInfo = document.querySelector('.game-id-info');
+        if (gameIdInfo) {
+            if (this.gameState && this.gameState.isAI) {
+                // For VS AI games, hide the Game ID section
+                gameIdInfo.style.display = 'none';
+            } else {
+                // For regular multiplayer games, show the Game ID
+                gameIdInfo.style.display = 'flex';
+                this.currentGameIdSpan.textContent = this.gameId ? this.gameId.substring(0, 8) + '...' : 'None';
+            }
+        }
     }
 
     updatePlayersList() {
