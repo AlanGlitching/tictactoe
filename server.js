@@ -404,6 +404,7 @@ app.post('/api/game/ai', (req, res) => {
   
   const finalState = game.getState(playerId);
   console.log('Final game state:', finalState);
+  console.log('isAI property in final state:', finalState.isAI);
   
   res.json({
     gameId,
