@@ -770,10 +770,6 @@ class TicTacToeMultiplayerClient {
                     const otherPlayer = this.gameState.players.find(p => p.symbol === this.gameState.currentPlayer);
                     if (this.gameState.isAI && otherPlayer && otherPlayer.name.includes('AI')) {
                         this.gameStatus.textContent = '🤔 AI is thinking...';
-                        // Add a small delay to make AI moves feel more natural
-                        setTimeout(() => {
-                            this.refreshGameState();
-                        }, 1500); // 1.5 second delay
                     } else {
                         this.gameStatus.textContent = `⏳ Waiting for ${otherPlayer ? otherPlayer.name : 'opponent'}...`;
                     }
@@ -840,9 +836,13 @@ class TicTacToeMultiplayerClient {
 
     startPolling() {
         this.stopPolling();
+        
+        // Use faster polling for AI games to catch delayed moves
+        const pollInterval = this.gameState && this.gameState.isAI ? 500 : 2000;
+        
         this.pollInterval = setInterval(() => {
             this.refreshGameState();
-        }, 2000);
+        }, pollInterval);
     }
 
     stopPolling() {

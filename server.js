@@ -494,12 +494,20 @@ app.post('/api/game/:gameId/move', (req, res) => {
     return res.status(400).json({ error: result.error });
   }
 
-  // If it's an AI game and it's now AI's turn, make AI move immediately
+  // If it's an AI game and it's now AI's turn, make AI move with a delay
   if (game.isAI && game.currentPlayer === 'O' && game.gameStatus === 'playing') {
-    const aiMoveResult = game.makeAIMove();
-    if (!aiMoveResult.success) {
-      console.error('AI move failed:', aiMoveResult.error);
-    }
+    // For AI games, we'll delay the actual move but send response immediately
+    // The client will poll for updates to see the AI move
+    console.log('AI will move in 1.5 seconds...');
+    
+    setTimeout(() => {
+      const aiMoveResult = game.makeAIMove();
+      if (!aiMoveResult.success) {
+        console.error('AI move failed:', aiMoveResult.error);
+      } else {
+        console.log('AI move completed:', aiMoveResult);
+      }
+    }, 1500); // 1.5 second delay
   }
   
   res.json({
