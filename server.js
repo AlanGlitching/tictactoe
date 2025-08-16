@@ -147,7 +147,7 @@ class TicTacToeGame {
   // AI move logic
   makeAIMove() {
     if (!this.isAI || this.currentPlayer !== 'O' || this.gameStatus !== 'playing') {
-      return false;
+      return { success: false, error: 'AI move not allowed' };
     }
 
     let move;
@@ -168,7 +168,7 @@ class TicTacToeGame {
     if (move !== -1) {
       return this.makeMove(move, this.aiPlayerId);
     }
-    return false;
+    return { success: false, error: 'No valid AI move found' };
   }
 
   getRandomMove() {
@@ -183,25 +183,15 @@ class TicTacToeGame {
   getMediumMove() {
     // Try to win first
     for (let i = 0; i < 9; i++) {
-      if (this.board[i] === null) {
-        this.board[i] = 'O';
-        if (this.checkWinnerOnBoard(this.board)) {
-          this.board[i] = null;
-          return i;
-        }
-        this.board[i] = null;
+      if (this.board[i] === null && this.wouldWin(this.board, i, 'O')) {
+        return i;
       }
     }
 
     // Block player from winning
     for (let i = 0; i < 9; i++) {
-      if (this.board[i] === null) {
-        this.board[i] = 'X';
-        if (this.checkWinnerOnBoard(this.board)) {
-          this.board[i] = null;
-          return i;
-        }
-        this.board[i] = null;
+      if (this.board[i] === null && this.wouldWin(this.board, i, 'X')) {
+        return i;
       }
     }
 
@@ -219,7 +209,8 @@ class TicTacToeGame {
   }
 
   getHardMove() {
-    return this.minimax(this.board, 'O').index;
+    const result = this.minimax(this.board, 'O');
+    return result && result.index !== undefined ? result.index : this.getRandomMove();
   }
 
   minimax(board, player) {
@@ -283,6 +274,25 @@ class TicTacToeGame {
       }
     }
     return null;
+  }
+
+  // Helper method to check if a move would result in a win
+  wouldWin(board, position, symbol) {
+    const tempBoard = [...board];
+    tempBoard[position] = symbol;
+    
+    const lines = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+      [0, 4, 8], [2, 4, 6] // diagonals
+    ];
+
+    for (const [a, b, c] of lines) {
+      if (tempBoard[a] && tempBoard[a] === tempBoard[b] && tempBoard[a] === tempBoard[c]) {
+        return true;
+      }
+    }
+    return false;
   }
 
   requestRematch(playerId) {
@@ -461,11 +471,12 @@ app.post('/api/game/:gameId/move', (req, res) => {
     return res.status(400).json({ error: result.error });
   }
 
-  // If it's an AI game and it's now AI's turn, make AI move
+  // If it's an AI game and it's now AI's turn, make AI move immediately
   if (game.isAI && game.currentPlayer === 'O' && game.gameStatus === 'playing') {
-    setTimeout(() => {
-      game.makeAIMove();
-    }, 500); // Small delay to make AI move feel natural
+    const aiMoveResult = game.makeAIMove();
+    if (!aiMoveResult.success) {
+      console.error('AI move failed:', aiMoveResult.error);
+    }
   }
   
   res.json({
