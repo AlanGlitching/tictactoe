@@ -166,11 +166,26 @@ class TicTacToeMultiplayerClient {
             console.log('AI input value:', this.aiPlayerNameInput?.value);
             console.log('AI button element:', this.startAiGameBtn);
             console.log('AI button disabled:', this.startAiGameBtn?.disabled);
+            console.log('Button style pointer-events:', this.startAiGameBtn ? window.getComputedStyle(this.startAiGameBtn).pointerEvents : 'N/A');
+            
+            // Force validation
+            this.validateAiForm();
+            
+            // Manual override if needed
+            if (this.startAiGameBtn && this.aiPlayerNameInput.value.trim().length >= 2) {
+                this.startAiGameBtn.disabled = false;
+                this.startAiGameBtn.style.pointerEvents = 'auto';
+                console.log('Manually enabled button and pointer events');
+            }
+        };
+        
+        // Add a function to manually enable the AI button
+        window.enableAIButton = () => {
             if (this.startAiGameBtn) {
                 this.startAiGameBtn.disabled = false;
-                console.log('Manually enabled button');
+                this.startAiGameBtn.style.pointerEvents = 'auto';
+                console.log('AI button manually enabled');
             }
-            this.validateAiForm();
         };
     }
 
@@ -301,10 +316,11 @@ class TicTacToeMultiplayerClient {
             this.selectDifficulty(mediumBtn);
         }
         
-        // Force validation after a small delay to ensure DOM is ready
+        // Force validation immediately and after a small delay to ensure DOM is ready
+        this.validateAiForm();
         setTimeout(() => {
             this.validateAiForm();
-        }, 50);
+        }, 100);
     }
 
     showGameScreen() {
@@ -336,7 +352,8 @@ class TicTacToeMultiplayerClient {
         this.createPlayerNameInput.value = '';
         this.joinPlayerNameInput.value = '';
         this.joinGameIdInput.value = '';
-        this.aiPlayerNameInput.value = '';
+        // Don't clear AI input as it might have user data
+        // this.aiPlayerNameInput.value = '';
         
         // Reset validation
         [this.createPlayerNameInput, this.joinPlayerNameInput, this.joinGameIdInput, this.aiPlayerNameInput].forEach(input => {
@@ -349,7 +366,8 @@ class TicTacToeMultiplayerClient {
         
         this.createGameBtn.disabled = true;
         this.joinGameBtn.disabled = true;
-        this.startAiGameBtn.disabled = true;
+        // Don't disable AI button as it should be controlled by validation
+        // this.startAiGameBtn.disabled = true;
     }
 
     selectDifficulty(btn) {
@@ -716,6 +734,7 @@ class TicTacToeMultiplayerClient {
             // Disable cells based on game state and turn
             const shouldDisable = !this.gameState || 
                                 this.gameState.gameStatus !== 'playing' || 
+                                this.gameState.gameStatus === 'paused' ||
                                 !this.gameState.yourTurn ||
                                 this.gameState.board[index] !== null;
             
@@ -733,7 +752,7 @@ class TicTacToeMultiplayerClient {
     }
 
     updateGameStatus() {
-        this.gameStatus.classList.remove('win', 'draw');
+        this.gameStatus.classList.remove('win', 'draw', 'paused');
         
         if (!this.gameState) {
             this.gameStatus.textContent = 'Not connected to game';
@@ -752,6 +771,19 @@ class TicTacToeMultiplayerClient {
                     this.gameStatus.textContent = `⏳ Waiting for ${otherPlayer ? otherPlayer.name : 'opponent'}...`;
                 }
                 break;
+            case 'paused':
+                this.gameStatus.classList.add('paused');
+                if (this.gameState.pausedBy) {
+                    const leftPlayer = this.gameState.players.find(p => p.symbol !== this.gameState.yourSymbol);
+                    if (leftPlayer) {
+                        this.gameStatus.textContent = `⏸️ Game paused - ${leftPlayer.name} left the game`;
+                    } else {
+                        this.gameStatus.textContent = '⏸️ Game paused - Opponent left the game';
+                    }
+                } else {
+                    this.gameStatus.textContent = '⏸️ Game paused - Waiting for opponent to return';
+                }
+                break;
             case 'won':
                 if (this.gameState.winner === this.gameState.yourSymbol) {
                     this.gameStatus.textContent = '🎉 You won!';
@@ -763,13 +795,13 @@ class TicTacToeMultiplayerClient {
                 break;
             case 'draw':
                 this.gameStatus.textContent = '🤝 It\'s a draw!';
-                this.gameStatus.classList.add('draw');
                 break;
         }
     }
 
     updateControls() {
         const gameEnded = this.gameState && (this.gameState.gameStatus === 'won' || this.gameState.gameStatus === 'draw');
+        const gamePaused = this.gameState && this.gameState.gameStatus === 'paused';
         const canReset = gameEnded;
         const canRematch = gameEnded && this.gameState.playerCount === 2;
         
@@ -790,6 +822,11 @@ class TicTacToeMultiplayerClient {
             }
         } else {
             this.rematchBtn.textContent = 'Rematch';
+        }
+        
+        // Show pause message if game is paused
+        if (gamePaused) {
+            this.showMessage('Game paused - waiting for opponent to return', 'info');
         }
     }
 

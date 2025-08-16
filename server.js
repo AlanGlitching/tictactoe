@@ -19,7 +19,7 @@ class TicTacToeGame {
   constructor(isAI = false, aiDifficulty = 'medium') {
     this.board = Array(9).fill(null);
     this.currentPlayer = 'X';
-    this.gameStatus = 'waiting'; // 'waiting', 'playing', 'won', 'draw'
+    this.gameStatus = 'waiting'; // 'waiting', 'playing', 'paused', 'won', 'draw'
     this.winner = null;
     this.winningLine = null;
     this.players = {}; // Store player info: {playerId: {name, symbol, joined}}
@@ -29,6 +29,8 @@ class TicTacToeGame {
     this.isAI = isAI;
     this.aiDifficulty = aiDifficulty;
     this.aiPlayerId = isAI ? 'ai-player' : null;
+    this.pausedBy = null; // Track who caused the game to pause
+    this.pausedAt = null; // Track when the game was paused
     
     // If AI game, add AI player as O
     if (isAI) {
@@ -55,7 +57,14 @@ class TicTacToeGame {
     this.playerCount++;
 
     if (this.playerCount === 2) {
-      this.gameStatus = 'playing';
+      // If game was paused, resume it
+      if (this.gameStatus === 'paused') {
+        this.gameStatus = 'playing';
+        this.pausedBy = null;
+        this.pausedAt = null;
+      } else {
+        this.gameStatus = 'playing';
+      }
     }
 
     return { success: true, symbol: symbol };
@@ -65,8 +74,12 @@ class TicTacToeGame {
     if (this.players[playerId]) {
       delete this.players[playerId];
       this.playerCount--;
+      
+      // If a player leaves during an active game, pause it
       if (this.playerCount < 2 && this.gameStatus === 'playing') {
-        this.gameStatus = 'waiting';
+        this.gameStatus = 'paused';
+        this.pausedBy = playerId; // Track who caused the pause
+        this.pausedAt = new Date();
       }
     }
   }
@@ -127,6 +140,8 @@ class TicTacToeGame {
     this.winner = null;
     this.winningLine = null;
     this.rematchRequests = new Set(); // Track who requested rematch
+    this.pausedBy = null;
+    this.pausedAt = null;
   }
 
   // AI move logic
@@ -303,7 +318,9 @@ class TicTacToeGame {
         symbol: this.players[id].symbol
       })),
       rematchRequests: this.rematchRequests.size,
-      rematchNeeded: this.playerCount - this.rematchRequests.size
+      rematchNeeded: this.playerCount - this.rematchRequests.size,
+      pausedBy: this.pausedBy,
+      pausedAt: this.pausedAt
     };
 
     if (playerId && this.players[playerId]) {
@@ -510,6 +527,33 @@ app.post('/api/game/:gameId/rematch', (req, res) => {
   });
 });
 
+// Resume paused game (when player rejoins)
+app.post('/api/game/:gameId/resume', (req, res) => {
+  const { gameId } = req.params;
+  const { playerId } = req.body;
+  const game = games.get(gameId);
+  
+  if (!game) {
+    return res.status(404).json({ error: 'Game not found' });
+  }
+  
+  if (!playerId || !game.players[playerId]) {
+    return res.status(403).json({ error: 'Only players in the game can resume it' });
+  }
+  
+  if (game.gameStatus === 'paused' && game.playerCount === 2) {
+    game.gameStatus = 'playing';
+    game.pausedBy = null;
+    game.pausedAt = null;
+  }
+  
+  res.json({
+    gameId,
+    playerId,
+    ...game.getState(playerId)
+  });
+});
+
 // Delete game
 app.delete('/api/game/:gameId', (req, res) => {
   const { gameId } = req.params;
@@ -540,5 +584,6 @@ app.listen(PORT, () => {
   console.log('  GET /api/game/:gameId - Get game state');
   console.log('  POST /api/game/:gameId/move - Make a move');
   console.log('  POST /api/game/:gameId/reset - Reset game');
+  console.log('  POST /api/game/:gameId/resume - Resume paused game');
   console.log('  DELETE /api/game/:gameId - Delete game');
 }); 
