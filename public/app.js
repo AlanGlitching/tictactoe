@@ -807,6 +807,9 @@ class TicTacToeMultiplayerClient {
         this.updateBoard();
         this.updateGameStatus();
         this.updateControls();
+        
+        // Check for player left scenario and show screen if needed
+        this.checkForPlayerLeft();
     }
 
     updatePlayerInfo() {
@@ -997,11 +1000,6 @@ class TicTacToeMultiplayerClient {
         if (this.gameState && this.gameState.rematchRequests > 0 && !this.gameState.youRequestedRematch) {
             this.showRematchRequestPopup();
         }
-        
-        // Show player left screen if game is paused due to player leaving
-        if (this.gameState && this.gameState.gameStatus === 'paused' && this.gameState.pausedBy) {
-            this.showPlayerLeftScreen();
-        }
     }
 
     startPolling() {
@@ -1164,6 +1162,32 @@ class TicTacToeMultiplayerClient {
         if (existingScreen) {
             existingScreen.remove();
             this.showSuccess('Opponent has returned! Game resumed.');
+        }
+    }
+
+    checkForPlayerLeft() {
+        // Only check if we're in a game and not already showing the screen
+        if (!this.gameState || !this.gameId) return;
+        
+        const existingScreen = document.getElementById('player-left-screen');
+        if (existingScreen) return; // Already showing the screen
+        
+        // Check if game is paused due to player leaving
+        if (this.gameState.gameStatus === 'paused' && this.gameState.pausedBy) {
+            console.log('Player left detected:', {
+                gameStatus: this.gameState.gameStatus,
+                pausedBy: this.gameState.pausedBy,
+                playerCount: this.gameState.playerCount
+            });
+            
+            // Show the player left screen
+            this.showPlayerLeftScreen();
+        }
+        
+        // Check if game resumed (player returned)
+        if (this.gameState.gameStatus === 'playing' && this.gameState.pausedBy === null) {
+            console.log('Game resumed, hiding player left screen');
+            this.hidePlayerLeftScreen();
         }
     }
 }
