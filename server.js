@@ -312,6 +312,13 @@ class TicTacToeGame {
       return { success: false, error: 'Game is still in progress' };
     }
 
+    // For AI games, start rematch immediately
+    if (this.isAI) {
+      this.reset();
+      return { success: true, rematchStarted: true, waitingFor: 0 };
+    }
+
+    // For regular games, wait for both players
     this.rematchRequests.add(playerId);
 
     // If both players want rematch, reset the game

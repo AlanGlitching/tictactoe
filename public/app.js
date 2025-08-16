@@ -806,15 +806,23 @@ class TicTacToeMultiplayerClient {
     updateControls() {
         const gameEnded = this.gameState && (this.gameState.gameStatus === 'won' || this.gameState.gameStatus === 'draw');
         const gamePaused = this.gameState && this.gameState.gameStatus === 'paused';
-        const canReset = gameEnded;
-        const canRematch = gameEnded && this.gameState.playerCount === 2;
+        const isAIGame = this.gameState && this.gameState.isAI;
+        
+        // For AI games: no reset button, rematch works immediately
+        // For regular games: both reset and rematch work normally
+        const canReset = gameEnded && !isAIGame;
+        const canRematch = gameEnded && (isAIGame || this.gameState.playerCount === 2);
         
         this.resetGameBtn.disabled = !canReset;
         this.rematchBtn.disabled = !canRematch;
         
         // Update rematch button text
         if (canRematch) {
-            if (this.gameState.youRequestedRematch) {
+            if (isAIGame) {
+                // AI games: rematch starts immediately
+                this.rematchBtn.textContent = 'New Game';
+            } else if (this.gameState.youRequestedRematch) {
+                // Regular games: wait for other player
                 if (this.gameState.rematchNeeded > 0) {
                     this.rematchBtn.textContent = `Waiting (${this.gameState.rematchNeeded} more)`;
                     this.rematchBtn.disabled = true;
