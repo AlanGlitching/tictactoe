@@ -1073,46 +1073,46 @@ class TicTacToeMultiplayerClient {
     }
 
     showRematchRequestPopup() {
-        // Remove any existing rematch popup
-        const existingPopup = document.getElementById('rematch-request-popup');
-        if (existingPopup) {
-            existingPopup.remove();
+        // Remove any existing rematch request screen
+        const existingScreen = document.getElementById('rematch-request-screen');
+        if (existingScreen) {
+            existingScreen.remove();
         }
 
-        const popup = document.createElement('div');
-        popup.id = 'rematch-request-popup';
-        popup.className = 'rematch-popup';
+        const screen = document.createElement('div');
+        screen.id = 'rematch-request-screen';
+        screen.className = 'rematch-request-screen';
         
-        popup.innerHTML = `
-            <div class="rematch-popup-content">
+        screen.innerHTML = `
+            <div class="rematch-request-content">
                 <div class="rematch-icon">🔄</div>
-                <h3>Rematch Request!</h3>
-                <p>Your opponent wants to play again!</p>
-                <div class="rematch-buttons">
-                    <button class="btn btn-success" id="accept-rematch-btn">Accept Rematch</button>
-                    <button class="btn btn-secondary" id="decline-rematch-btn">Decline</button>
+                <h2>Rematch Request!</h2>
+                <p>Your opponent wants to play again!<br>Would you like to accept?</p>
+                <div class="rematch-request-buttons">
+                    <button class="btn btn-success" id="accept-rematch-btn">Yes, Let's Play!</button>
+                    <button class="btn btn-secondary" id="decline-rematch-btn">No, Thanks</button>
                 </div>
             </div>
         `;
 
-        document.body.appendChild(popup);
+        document.body.appendChild(screen);
 
         // Add event listeners
         document.getElementById('accept-rematch-btn').addEventListener('click', () => {
             this.requestRematch();
-            popup.remove();
+            screen.remove();
         });
 
         document.getElementById('decline-rematch-btn').addEventListener('click', () => {
-            popup.remove();
+            screen.remove();
         });
 
-        // Auto-remove after 10 seconds if not responded to
+        // Auto-remove after 15 seconds if not responded to
         setTimeout(() => {
-            if (popup.parentNode) {
-                popup.remove();
+            if (screen.parentNode) {
+                screen.remove();
             }
-        }, 10000);
+        }, 15000);
     }
 }
 
