@@ -34,6 +34,7 @@ class TicTacToeMultiplayerClient {
         
         // TicTacToe menu elements
         this.tictactoeVsAiBtn = document.getElementById('tictactoe-vs-ai-btn');
+        this.tictactoeCreateBtn = document.getElementById('tictactoe-create-btn');
         this.tictactoeQuickmatchBtn = document.getElementById('tictactoe-quickmatch-btn');
         this.tictactoeJoinBtn = document.getElementById('tictactoe-join-btn');
         this.backToGamesBtn = document.getElementById('back-to-games-btn');
@@ -57,6 +58,7 @@ class TicTacToeMultiplayerClient {
         this.backToChoiceBtn = document.getElementById('back-to-choice-btn');
         this.backToChoiceBtn2 = document.getElementById('back-to-choice-btn2');
         this.backToChoiceBtn3 = document.getElementById('back-to-choice-btn3');
+        this.backToChoiceBtn4 = document.getElementById('back-to-choice-btn4');
         
         // Feedback elements
         this.createNameFeedback = document.getElementById('create-name-feedback');
@@ -95,7 +97,9 @@ class TicTacToeMultiplayerClient {
         this.backToChoiceBtn.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn2.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn3.addEventListener('click', () => this.showTicTacToeMenu());
+        this.backToChoiceBtn4.addEventListener('click', () => this.showTicTacToeMenu());
         this.tictactoeVsAiBtn.addEventListener('click', () => this.showVsAiScreen());
+        this.tictactoeCreateBtn.addEventListener('click', () => this.showCreateScreen());
         this.tictactoeQuickmatchBtn.addEventListener('click', () => this.showQuickmatchScreen());
         this.tictactoeJoinBtn.addEventListener('click', () => this.showJoinScreen());
         this.backToGamesBtn.addEventListener('click', () => this.showChoiceScreen());
