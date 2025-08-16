@@ -14,6 +14,10 @@ app.use(express.static('public'));
 // Game state storage (in production, use a database)
 const games = new Map();
 
+// Matchmaking system
+const matchmakingQueue = new Map(); // playerId -> { playerName, timestamp }
+const maxQueueWaitTime = 30000; // 30 seconds max wait time
+
 // Game logic class
 class TicTacToeGame {
   constructor(isAI = false, aiDifficulty = 'medium') {
@@ -361,7 +365,93 @@ class TicTacToeGame {
 
 // API Routes
 
-// Create a new game
+// Join matchmaking queue
+app.post('/api/matchmaking/join', (req, res) => {
+  const { playerName } = req.body;
+  
+  if (!playerName || playerName.length < 2 || playerName.length > 15) {
+    return res.status(400).json({ error: 'Player name must be 2-15 characters' });
+  }
+
+  const playerId = uuidv4();
+  matchmakingQueue.set(playerId, {
+    playerName: playerName.trim(),
+    timestamp: Date.now()
+  });
+
+  console.log(`Player ${playerName} joined matchmaking queue. Total in queue: ${matchmakingQueue.size}`);
+
+  // Try to find a match immediately
+  const match = findMatch(playerId);
+  if (match) {
+    // Remove both players from queue
+    matchmakingQueue.delete(playerId);
+    matchmakingQueue.delete(match.playerId);
+    
+    // Create a new game
+    const gameId = uuidv4();
+    const game = new TicTacToeGame();
+    
+    // Add both players
+    game.addPlayer(playerId, playerName.trim());
+    game.addPlayer(match.playerId, match.playerName);
+    
+    games.set(gameId, game);
+    
+    console.log(`Match found! Created game ${gameId} between ${playerName} and ${match.playerName}`);
+    
+    res.json({
+      success: true,
+      matched: true,
+      gameId,
+      playerId,
+      opponent: match.playerName,
+      ...game.getState(playerId)
+    });
+  } else {
+    // No match found, stay in queue
+    res.json({
+      success: true,
+      matched: false,
+      playerId,
+      message: 'Waiting for opponent...'
+    });
+  }
+});
+
+// Leave matchmaking queue
+app.post('/api/matchmaking/leave', (req, res) => {
+  const { playerId } = req.body;
+  
+  if (matchmakingQueue.has(playerId)) {
+    const playerName = matchmakingQueue.get(playerId).playerName;
+    matchmakingQueue.delete(playerId);
+    console.log(`Player ${playerName} left matchmaking queue. Total in queue: ${matchmakingQueue.size}`);
+  }
+  
+  res.json({ success: true, message: 'Left matchmaking queue' });
+});
+
+// Get matchmaking status
+app.get('/api/matchmaking/status/:playerId', (req, res) => {
+  const { playerId } = req.params;
+  
+  if (!matchmakingQueue.has(playerId)) {
+    return res.status(404).json({ error: 'Player not in matchmaking queue' });
+  }
+  
+  const queuePosition = Array.from(matchmakingQueue.keys()).indexOf(playerId) + 1;
+  const totalInQueue = matchmakingQueue.size;
+  
+  res.json({
+    playerId,
+    queuePosition,
+    totalInQueue,
+    estimatedWaitTime: Math.max(0, (totalInQueue - 1) * 5000) // Rough estimate
+  });
+});
+
+// Create a new game (for direct creation if needed)
 app.post('/api/game', (req, res) => {
   const gameId = uuidv4();
   const game = new TicTacToeGame();
@@ -620,11 +710,42 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Clean up old games (optional - runs every hour)
+// Matchmaking helper function
+function findMatch(excludePlayerId) {
+  const players = Array.from(matchmakingQueue.entries());
+  
+  // Find the first available player (not the excluded one)
+  for (const [playerId, playerData] of players) {
+    if (playerId !== excludePlayerId) {
+      return {
+        playerId,
+        playerName: playerData.playerName
+      };
+    }
+  }
+  
+  return null;
+}
+
+// Clean up old games and matchmaking queue (runs every hour)
 setInterval(() => {
-  // In a real application, you might want to track game creation time
-  // and clean up games older than a certain threshold
+  // Clean up old games
   console.log(`Current active games: ${games.size}`);
+  
+  // Clean up old matchmaking entries (older than 5 minutes)
+  const now = Date.now();
+  let cleanedCount = 0;
+  
+  for (const [playerId, playerData] of matchmakingQueue.entries()) {
+    if (now - playerData.timestamp > 300000) { // 5 minutes
+      matchmakingQueue.delete(playerId);
+      cleanedCount++;
+    }
+  }
+  
+  if (cleanedCount > 0) {
+    console.log(`Cleaned up ${cleanedCount} old matchmaking entries. Queue size: ${matchmakingQueue.size}`);
+  }
 }, 3600000);
 
 app.listen(PORT, () => {
@@ -636,4 +757,8 @@ app.listen(PORT, () => {
   console.log('  POST /api/game/:gameId/reset - Reset game');
   console.log('  POST /api/game/:gameId/resume - Resume paused game');
   console.log('  DELETE /api/game/:gameId - Delete game');
+  console.log('Matchmaking endpoints:');
+  console.log('  POST /api/matchmaking/join - Join matchmaking queue');
+  console.log('  POST /api/matchmaking/leave - Leave matchmaking queue');
+  console.log('  GET /api/matchmaking/status/:playerId - Get queue status');
 }); 

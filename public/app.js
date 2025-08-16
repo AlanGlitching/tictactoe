@@ -21,6 +21,7 @@ class TicTacToeMultiplayerClient {
         this.createScreen = document.getElementById('create-screen');
         this.joinScreen = document.getElementById('join-screen');
         this.vsAiScreen = document.getElementById('vs-ai-screen');
+        this.quickmatchScreen = document.getElementById('quickmatch-screen');
         this.gameScreen = document.getElementById('game-screen');
         
         // Welcome elements
@@ -33,7 +34,7 @@ class TicTacToeMultiplayerClient {
         
         // TicTacToe menu elements
         this.tictactoeVsAiBtn = document.getElementById('tictactoe-vs-ai-btn');
-        this.tictactoeCreateBtn = document.getElementById('tictactoe-create-btn');
+        this.tictactoeQuickmatchBtn = document.getElementById('tictactoe-quickmatch-btn');
         this.tictactoeJoinBtn = document.getElementById('tictactoe-join-btn');
         this.backToGamesBtn = document.getElementById('back-to-games-btn');
         
@@ -45,6 +46,8 @@ class TicTacToeMultiplayerClient {
         this.joinGameBtn = document.getElementById('join-game-btn');
         this.aiPlayerNameInput = document.getElementById('ai-player-name');
         this.startAiGameBtn = document.getElementById('start-ai-game-btn');
+        this.quickmatchPlayerNameInput = document.getElementById('quickmatch-player-name');
+        this.findMatchBtn = document.getElementById('find-match-btn');
         
         // Debug: Check if elements are found
         console.log('AI elements found:', {
@@ -60,6 +63,7 @@ class TicTacToeMultiplayerClient {
         this.joinNameFeedback = document.getElementById('join-name-feedback');
         this.joinIdFeedback = document.getElementById('join-id-feedback');
         this.aiNameFeedback = document.getElementById('ai-name-feedback');
+        this.quickmatchNameFeedback = document.getElementById('quickmatch-name-feedback');
         
         // Game elements
         this.gameBoard = document.getElementById('game-board');
@@ -92,13 +96,14 @@ class TicTacToeMultiplayerClient {
         this.backToChoiceBtn2.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn3.addEventListener('click', () => this.showTicTacToeMenu());
         this.tictactoeVsAiBtn.addEventListener('click', () => this.showVsAiScreen());
-        this.tictactoeCreateBtn.addEventListener('click', () => this.showCreateScreen());
+        this.tictactoeQuickmatchBtn.addEventListener('click', () => this.showQuickmatchScreen());
         this.tictactoeJoinBtn.addEventListener('click', () => this.showJoinScreen());
         this.backToGamesBtn.addEventListener('click', () => this.showChoiceScreen());
         
         // Form events
         this.createGameBtn.addEventListener('click', () => this.createGame());
         this.joinGameBtn.addEventListener('click', () => this.joinGame());
+        this.findMatchBtn.addEventListener('click', () => this.findMatch());
         
         // Add debug for AI button
         if (this.startAiGameBtn) {
@@ -116,6 +121,7 @@ class TicTacToeMultiplayerClient {
         this.joinPlayerNameInput.addEventListener('input', () => this.validateJoinForm());
         this.joinGameIdInput.addEventListener('input', () => this.validateJoinForm());
         this.aiPlayerNameInput.addEventListener('input', () => this.validateAiForm());
+        this.quickmatchPlayerNameInput.addEventListener('input', () => this.validateQuickmatchForm());
 
         // Difficulty selection
         document.querySelectorAll('.difficulty-btn').forEach(btn => {
@@ -323,6 +329,15 @@ class TicTacToeMultiplayerClient {
         }, 100);
     }
 
+    showQuickmatchScreen() {
+        this.hideAllScreens();
+        this.quickmatchScreen.classList.remove('hidden');
+        this.quickmatchPlayerNameInput.focus();
+        
+        // Force validation immediately
+        this.validateQuickmatchForm();
+    }
+
     showGameScreen() {
         this.hideAllScreens();
         this.gameScreen.classList.remove('hidden');
@@ -339,7 +354,7 @@ class TicTacToeMultiplayerClient {
     }
 
     hideAllScreens() {
-        [this.welcomeScreen, this.choiceScreen, this.tictactoeMenuScreen, this.createScreen, this.joinScreen, this.vsAiScreen, this.gameScreen].forEach(screen => {
+        [this.welcomeScreen, this.choiceScreen, this.tictactoeMenuScreen, this.createScreen, this.joinScreen, this.vsAiScreen, this.quickmatchScreen, this.gameScreen].forEach(screen => {
             screen.classList.add('hidden');
         });
     }
@@ -423,6 +438,16 @@ class TicTacToeMultiplayerClient {
         return isValid;
     }
 
+    validateQuickmatchForm() {
+        const playerName = this.quickmatchPlayerNameInput.value.trim();
+        const isValid = this.validatePlayerName(playerName);
+        
+        this.updateInputValidation(this.quickmatchPlayerNameInput, this.quickmatchNameFeedback, isValid, playerName);
+        this.findMatchBtn.disabled = !isValid.valid;
+        
+        return isValid;
+    }
+
     async startAiGame() {
         console.log('startAiGame called');
         
@@ -469,6 +494,81 @@ class TicTacToeMultiplayerClient {
         } finally {
             this.startAiGameBtn.disabled = false;
             this.startAiGameBtn.textContent = 'Start Game';
+        }
+    }
+
+    async findMatch() {
+        const validation = this.validateQuickmatchForm();
+        
+        if (!validation.valid) {
+            this.showError(validation.message);
+            return;
+        }
+
+        try {
+            this.findMatchBtn.disabled = true;
+            this.findMatchBtn.textContent = 'Finding Match...';
+
+            const response = await this.apiCall('/matchmaking/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    playerName: this.quickmatchPlayerNameInput.value.trim() 
+                })
+            });
+            
+            if (response.matched) {
+                // Match found! Start the game
+                this.gameId = response.gameId;
+                this.playerId = response.playerId;
+                this.playerName = this.quickmatchPlayerNameInput.value.trim();
+                this.gameState = response;
+                
+                this.showGameScreen();
+                this.updateUI();
+                this.showSuccess(`Match found! Playing against ${response.opponent}`);
+            } else {
+                // No match yet, start polling for status
+                this.matchmakingPlayerId = response.playerId;
+                this.startMatchmakingPolling();
+                this.showSuccess('Searching for opponent...');
+            }
+
+        } catch (error) {
+            console.error('Failed to find match:', error);
+            this.showError(error.message || 'Failed to find match');
+        } finally {
+            this.findMatchBtn.disabled = false;
+            this.findMatchBtn.textContent = 'Find Match';
+        }
+    }
+
+    startMatchmakingPolling() {
+        if (this.matchmakingPollInterval) {
+            clearInterval(this.matchmakingPollInterval);
+        }
+        
+        this.matchmakingPollInterval = setInterval(async () => {
+            try {
+                const status = await this.apiCall(`/matchmaking/status/${this.matchmakingPlayerId}`);
+                console.log('Matchmaking status:', status);
+                
+                // Check if we got matched while polling
+                if (status.matched) {
+                    this.stopMatchmakingPolling();
+                    // Handle match found
+                }
+            } catch (error) {
+                console.error('Failed to get matchmaking status:', error);
+                this.stopMatchmakingPolling();
+            }
+        }, 2000); // Check every 2 seconds
+    }
+
+    stopMatchmakingPolling() {
+        if (this.matchmakingPollInterval) {
+            clearInterval(this.matchmakingPollInterval);
+            this.matchmakingPollInterval = null;
         }
     }
 
