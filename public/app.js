@@ -694,15 +694,22 @@ class TicTacToeMultiplayerClient {
         
         // Hide Game ID for VS AI games since it's not needed
         const gameIdInfo = document.querySelector('.game-id-info');
+        
+        // Detect AI games by checking if any player name contains "AI"
+        const isAIGame = this.gameState && this.gameState.players && 
+                         this.gameState.players.some(player => player.name.includes('AI'));
+        
         console.log('Game ID hiding logic:', {
             gameIdInfo: !!gameIdInfo,
             gameState: !!this.gameState,
             isAI: this.gameState?.isAI,
+            isAIGame: isAIGame,
+            players: this.gameState?.players?.map(p => p.name),
             gameStatus: this.gameState?.gameStatus
         });
         
         if (gameIdInfo) {
-            if (this.gameState && this.gameState.isAI) {
+            if (isAIGame) {
                 // For VS AI games, hide the Game ID section
                 gameIdInfo.style.display = 'none';
                 console.log('Game ID hidden for AI game');
