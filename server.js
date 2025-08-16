@@ -17,6 +17,7 @@ const games = new Map();
 // Matchmaking system
 const matchmakingQueue = new Map(); // playerId -> { playerName, timestamp }
 const maxQueueWaitTime = 30000; // 30 seconds max wait time
+const pendingMatches = new Map(); // gameId -> { player1, player2, game }
 
 // Game logic class
 class TicTacToeGame {
@@ -403,6 +404,13 @@ app.post('/api/matchmaking/join', (req, res) => {
     
     games.set(gameId, game);
     
+    // Store the match details so both players can retrieve them
+    pendingMatches.set(gameId, {
+      player1: { id: playerId, name: playerName.trim() },
+      player2: { id: match.playerId, name: match.playerName },
+      game: game
+    });
+    
     console.log(`Match found! Created game ${gameId} between ${playerName} and ${match.playerName} (Matchmaking)`);
     console.log(`Game state:`, game.getState(playerId));
     
@@ -456,6 +464,37 @@ app.get('/api/matchmaking/status/:playerId', (req, res) => {
     totalInQueue,
     estimatedWaitTime: Math.max(0, (totalInQueue - 1) * 5000) // Rough estimate
   });
+});
+
+// Get match details for a player who was matched
+app.get('/api/matchmaking/match/:playerId', (req, res) => {
+  const { playerId } = req.params;
+  
+  // Find if this player is in any pending match
+  for (const [gameId, matchData] of pendingMatches.entries()) {
+    if (matchData.player1.id === playerId || matchData.player2.id === playerId) {
+      const game = matchData.game;
+      const opponent = matchData.player1.id === playerId ? matchData.player2 : matchData.player1;
+      
+      // Remove from pending matches since both players now have the info
+      pendingMatches.delete(gameId);
+      
+      console.log(`Player ${playerId} retrieved match ${gameId} against ${opponent.name}`);
+      
+      res.json({
+        success: true,
+        matched: true,
+        gameId,
+        playerId,
+        opponent: opponent.name,
+        isMatchmaking: true,
+        ...game.getState(playerId)
+      });
+      return;
+    }
+  }
+  
+  res.status(404).json({ error: 'No match found for this player' });
 });
 
 // Create a new game (for direct creation if needed)
@@ -768,4 +807,5 @@ app.listen(PORT, () => {
   console.log('  POST /api/matchmaking/join - Join matchmaking queue');
   console.log('  POST /api/matchmaking/leave - Leave matchmaking queue');
   console.log('  GET /api/matchmaking/status/:playerId - Get queue status');
+  console.log('  GET /api/matchmaking/match/:playerId - Get match details');
 }); 

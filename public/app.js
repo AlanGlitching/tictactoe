@@ -554,14 +554,31 @@ class TicTacToeMultiplayerClient {
         
         this.matchmakingPollInterval = setInterval(async () => {
             try {
+                // First check if we got matched
+                try {
+                    const match = await this.apiCall(`/matchmaking/match/${this.matchmakingPlayerId}`);
+                    if (match.matched) {
+                        this.stopMatchmakingPolling();
+                        
+                        // Match found! Start the game
+                        this.gameId = match.gameId;
+                        this.playerId = match.playerId;
+                        this.playerName = this.quickmatchPlayerNameInput.value.trim();
+                        this.gameState = match;
+                        
+                        this.showGameScreen();
+                        this.updateUI();
+                        this.showSuccess(`Match found! Playing against ${match.opponent}`);
+                        return;
+                    }
+                } catch (matchError) {
+                    // No match yet, continue polling status
+                }
+                
+                // Check queue status
                 const status = await this.apiCall(`/matchmaking/status/${this.matchmakingPlayerId}`);
                 console.log('Matchmaking status:', status);
                 
-                // Check if we got matched while polling
-                if (status.matched) {
-                    this.stopMatchmakingPolling();
-                    // Handle match found
-                }
             } catch (error) {
                 console.error('Failed to get matchmaking status:', error);
                 this.stopMatchmakingPolling();
