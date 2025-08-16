@@ -997,6 +997,11 @@ class TicTacToeMultiplayerClient {
         if (this.gameState && this.gameState.rematchRequests > 0 && !this.gameState.youRequestedRematch) {
             this.showRematchRequestPopup();
         }
+        
+        // Show player left screen if game is paused due to player leaving
+        if (this.gameState && this.gameState.gameStatus === 'paused' && this.gameState.pausedBy) {
+            this.showPlayerLeftScreen();
+        }
     }
 
     startPolling() {
@@ -1113,6 +1118,53 @@ class TicTacToeMultiplayerClient {
                 screen.remove();
             }
         }, 15000);
+    }
+
+    showPlayerLeftScreen() {
+        // Remove any existing player left screen
+        const existingScreen = document.getElementById('player-left-screen');
+        if (existingScreen) {
+            existingScreen.remove();
+        }
+
+        const screen = document.createElement('div');
+        screen.id = 'player-left-screen';
+        screen.className = 'player-left-screen';
+        
+        screen.innerHTML = `
+            <div class="player-left-content">
+                <div class="player-left-icon">🚪</div>
+                <h2>Player Left the Game</h2>
+                <p>Your opponent has disconnected from the game.<br>The game is now paused.</p>
+                <div class="player-left-buttons">
+                    <button class="btn btn-primary" id="wait-for-player-btn">Wait for Return</button>
+                    <button class="btn btn-secondary" id="leave-game-btn">Leave Game</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(screen);
+
+        // Add event listeners
+        document.getElementById('wait-for-player-btn').addEventListener('click', () => {
+            screen.remove();
+            this.showMessage('Waiting for opponent to return...', 'info');
+        });
+
+        document.getElementById('leave-game-btn').addEventListener('click', () => {
+            this.leaveGame();
+            screen.remove();
+        });
+
+        // Don't auto-remove this screen - player must make a choice
+    }
+
+    hidePlayerLeftScreen() {
+        const existingScreen = document.getElementById('player-left-screen');
+        if (existingScreen) {
+            existingScreen.remove();
+            this.showSuccess('Opponent has returned! Game resumed.');
+        }
     }
 }
 
