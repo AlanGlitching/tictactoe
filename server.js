@@ -48,7 +48,15 @@ class TicTacToeGame {
       return { success: false, error: 'Game is full' };
     }
 
-    const symbol = this.playerCount === 0 ? 'X' : 'O';
+    let symbol;
+    if (this.isAI) {
+      // In AI games, human player always gets X, AI gets O
+      symbol = 'X';
+    } else {
+      // In regular games, first player gets X, second gets O
+      symbol = this.playerCount === 0 ? 'X' : 'O';
+    }
+    
     this.players[playerId] = {
       name: playerName,
       symbol: symbol,
@@ -369,16 +377,30 @@ app.post('/api/game/ai', (req, res) => {
   const playerId = uuidv4();
   const game = new TicTacToeGame(true, difficulty);
   
+  console.log('Creating AI game:', { gameId, playerName, difficulty, isAI: game.isAI });
+  
   // Add human player as X
-  game.addPlayer(playerId, playerName);
-  game.gameStatus = 'playing'; // Start immediately since AI is already joined
+  const addResult = game.addPlayer(playerId, playerName);
+  
+  console.log('Add player result:', addResult);
+  console.log('Game state after adding player:', game.getState(playerId));
+  
+  // Ensure game starts in playing mode for AI games
+  if (addResult.success && game.isAI) {
+    game.gameStatus = 'playing';
+    game.currentPlayer = 'X'; // Human player goes first
+    console.log('Game set to playing mode, current player:', game.currentPlayer);
+  }
   
   games.set(gameId, game);
+  
+  const finalState = game.getState(playerId);
+  console.log('Final game state:', finalState);
   
   res.json({
     gameId,
     playerId,
-    ...game.getState(playerId)
+    ...finalState
   });
 });
 
