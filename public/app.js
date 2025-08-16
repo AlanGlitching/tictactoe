@@ -150,10 +150,28 @@ class TicTacToeMultiplayerClient {
             });
         });
 
+        this.aiPlayerNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && this.startAiGameBtn.disabled === false) this.startAiGame();
+        });
+
         // Board events
         this.cells.forEach((cell, index) => {
             cell.addEventListener('click', () => this.makeMove(index));
         });
+
+        // DEBUG: Add debugging function to window for testing
+        window.debugAI = () => {
+            console.log('=== MANUAL DEBUG ===');
+            console.log('AI input element:', this.aiPlayerNameInput);
+            console.log('AI input value:', this.aiPlayerNameInput?.value);
+            console.log('AI button element:', this.startAiGameBtn);
+            console.log('AI button disabled:', this.startAiGameBtn?.disabled);
+            if (this.startAiGameBtn) {
+                this.startAiGameBtn.disabled = false;
+                console.log('Manually enabled button');
+            }
+            this.validateAiForm();
+        };
     }
 
     validateCreateForm() {
@@ -283,13 +301,10 @@ class TicTacToeMultiplayerClient {
             this.selectDifficulty(mediumBtn);
         }
         
-        // Clear the input and force re-validation
-        this.aiPlayerNameInput.value = '';
-        
-        // Add a small delay to ensure DOM is ready
+        // Force validation after a small delay to ensure DOM is ready
         setTimeout(() => {
             this.validateAiForm();
-        }, 100);
+        }, 50);
     }
 
     showGameScreen() {
@@ -349,22 +364,43 @@ class TicTacToeMultiplayerClient {
     }
 
     validateAiForm() {
+        console.log('=== AI FORM VALIDATION DEBUG START ===');
+        
+        if (!this.aiPlayerNameInput) {
+            console.error('AI player name input element not found!');
+            return { valid: false, message: 'Input element missing' };
+        }
+        
+        if (!this.startAiGameBtn) {
+            console.error('AI start button element not found!');
+            return { valid: false, message: 'Button element missing' };
+        }
+        
         const playerName = this.aiPlayerNameInput.value.trim();
         const isValid = this.validatePlayerName(playerName);
         
-        this.updateInputValidation(this.aiPlayerNameInput, this.aiNameFeedback, isValid);
+        console.log('Raw input value:', this.aiPlayerNameInput.value);
+        console.log('Trimmed player name:', playerName);
+        console.log('Name length:', playerName.length);
+        console.log('Validation result:', isValid);
         
-        if (this.startAiGameBtn) {
-            this.startAiGameBtn.disabled = !isValid.valid;
-            console.log('AI Form validation:', { 
-                playerName, 
-                isValid, 
-                buttonDisabled: this.startAiGameBtn.disabled,
-                buttonElement: !!this.startAiGameBtn 
-            });
-        } else {
-            console.error('startAiGameBtn not found during validation');
+        this.updateInputValidation(this.aiPlayerNameInput, this.aiNameFeedback, isValid, playerName);
+        
+        const wasDisabled = this.startAiGameBtn.disabled;
+        this.startAiGameBtn.disabled = !isValid.valid;
+        
+        console.log('Button state changed from', wasDisabled, 'to', this.startAiGameBtn.disabled);
+        console.log('Button should be enabled:', isValid.valid);
+        console.log('Button classes:', this.startAiGameBtn.className);
+        console.log('Button style pointer-events:', window.getComputedStyle(this.startAiGameBtn).pointerEvents);
+        
+        // Force remove pointer-events none if button should be enabled
+        if (isValid.valid) {
+            this.startAiGameBtn.style.pointerEvents = 'auto';
+            console.log('Manually enabled pointer events');
         }
+        
+        console.log('=== AI FORM VALIDATION DEBUG END ===');
         
         return isValid;
     }
