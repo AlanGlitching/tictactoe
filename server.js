@@ -338,7 +338,8 @@ class TicTacToeGame {
       rematchRequests: this.rematchRequests.size,
       rematchNeeded: this.playerCount - this.rematchRequests.size,
       pausedBy: this.pausedBy,
-      pausedAt: this.pausedAt
+      pausedAt: this.pausedAt,
+      isAI: this.isAI
     };
 
     if (playerId && this.players[playerId]) {

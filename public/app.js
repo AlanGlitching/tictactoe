@@ -768,7 +768,15 @@ class TicTacToeMultiplayerClient {
                     this.gameStatus.textContent = '🎯 Your turn!';
                 } else {
                     const otherPlayer = this.gameState.players.find(p => p.symbol === this.gameState.currentPlayer);
-                    this.gameStatus.textContent = `⏳ Waiting for ${otherPlayer ? otherPlayer.name : 'opponent'}...`;
+                    if (this.gameState.isAI && otherPlayer && otherPlayer.name.includes('AI')) {
+                        this.gameStatus.textContent = '🤔 AI is thinking...';
+                        // Add a small delay to make AI moves feel more natural
+                        setTimeout(() => {
+                            this.refreshGameState();
+                        }, 1500); // 1.5 second delay
+                    } else {
+                        this.gameStatus.textContent = `⏳ Waiting for ${otherPlayer ? otherPlayer.name : 'opponent'}...`;
+                    }
                 }
                 break;
             case 'paused':
