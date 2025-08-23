@@ -107,7 +107,7 @@ class TicTacToeMultiplayerClient {
         this.backToChoiceBtn2.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn3.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn4.addEventListener('click', () => this.showTicTacToeMenu());
-        this.backToChoiceBtn5.addEventListener('click', () => this.showTicTacToeMenu());
+        this.backToChoiceBtn5.addEventListener('click', () => this.showChoiceScreen());
         this.tictactoeVsAiBtn.addEventListener('click', () => this.showVsAiScreen());
         this.tictactoeCreateBtn.addEventListener('click', () => this.showCreateScreen());
         this.tictactoeQuickmatchBtn.addEventListener('click', () => this.showQuickmatchScreen());
@@ -858,6 +858,8 @@ class TicTacToeMultiplayerClient {
         this.targetNumber = Math.floor(Math.random() * 100) + 1;
         this.attemptsLeft = 10;
         this.previousGuesses = [];
+        this.lowerBound = null;
+        this.upperBound = null;
         
         // Reset UI
         this.guessingNumberInput.value = '';
@@ -869,6 +871,9 @@ class TicTacToeMultiplayerClient {
         this.guessingNumberFeedback.textContent = '';
         this.guessingNumberFeedback.classList.remove('success', 'error');
         this.guessingNumberInput.classList.remove('valid', 'invalid');
+        
+        // Initialize range display
+        this.updateRangeDisplay();
         
         console.log('Guessing game initialized. Target number:', this.targetNumber);
     }
@@ -902,13 +907,21 @@ class TicTacToeMultiplayerClient {
             return;
         }
         
-        // Give hint
-        let hint;
+        // Update range tracking
         if (guess > this.targetNumber) {
-            hint = '📉 Too high! Try a lower number.';
+            // Guess is too high, update upper bound
+            if (!this.upperBound || guess < this.upperBound) {
+                this.upperBound = guess;
+            }
         } else {
-            hint = '📈 Too low! Try a higher number.';
+            // Guess is too low, update lower bound
+            if (!this.lowerBound || guess > this.lowerBound) {
+                this.lowerBound = guess;
+            }
         }
+        
+        // Update the range display
+        this.updateRangeDisplay();
         
         // Update UI
         this.attemptsLeftSpan.textContent = this.attemptsLeft;
@@ -916,11 +929,26 @@ class TicTacToeMultiplayerClient {
         this.guessingNumberInput.value = '';
         this.submitGuessBtn.disabled = true;
         
-        // Show hint
-        this.showMessage(hint, 'info');
-        
         // Re-validate form
         this.validateGuessingForm();
+    }
+
+    updateRangeDisplay() {
+        const rangeInfo = document.getElementById('range-info');
+        if (!rangeInfo) return;
+
+        let rangeText;
+        if (this.lowerBound && this.upperBound) {
+            rangeText = `${this.lowerBound} < X < ${this.upperBound}`;
+        } else if (this.lowerBound) {
+            rangeText = `${this.lowerBound} < X < 100`;
+        } else if (this.upperBound) {
+            rangeText = `1 < X < ${this.upperBound}`;
+        } else {
+            rangeText = '1 < X < 100';
+        }
+
+        rangeInfo.textContent = rangeText;
     }
 
     endGuessingGame() {
@@ -1202,6 +1230,12 @@ class TicTacToeMultiplayerClient {
     }
 
     showMessage(message, type = 'info') {
+        // Check if this is a guessing game hint and should be displayed centrally
+        if (type === 'info' && message.includes('📊 Range:')) {
+            this.showCentralMessage(message, type);
+            return;
+        }
+
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
@@ -1210,42 +1244,122 @@ class TicTacToeMultiplayerClient {
             position: 'fixed',
             top: '20px',
             right: '20px',
-            padding: '15px 20px',
-            borderRadius: '10px',
+            padding: '20px 25px',
+            borderRadius: '15px',
             color: 'white',
-            fontWeight: '600',
-            zIndex: '1000',
-            maxWidth: '300px',
-            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-            transform: 'translateX(100%)',
-            transition: 'transform 0.3s ease'
+            fontWeight: '700',
+            fontSize: '16px',
+            zIndex: '2000',
+            maxWidth: '400px',
+            minWidth: '300px',
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
+            transform: 'translateX(120%)',
+            transition: 'all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)',
+            textAlign: 'center',
+            lineHeight: '1.4'
         });
 
         switch (type) {
             case 'success':
-                notification.style.background = 'linear-gradient(45deg, #4CAF50, #45a049)';
+                notification.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+                notification.style.borderColor = 'rgba(76, 175, 80, 0.3)';
                 break;
             case 'error':
-                notification.style.background = 'linear-gradient(45deg, #f44336, #d32f2f)';
+                notification.style.background = 'linear-gradient(135deg, #f44336, #d32f2f)';
+                notification.style.borderColor = 'rgba(244, 67, 54, 0.3)';
+                break;
+            case 'info':
+                notification.style.background = 'linear-gradient(135deg, #2196F3, #1976D2)';
+                notification.style.borderColor = 'rgba(33, 150, 243, 0.3)';
                 break;
             default:
-                notification.style.background = 'linear-gradient(45deg, #2196F3, #1976D2)';
+                notification.style.background = 'linear-gradient(135deg, #FF9800, #F57C00)';
+                notification.style.borderColor = 'rgba(255, 152, 0, 0.3)';
         }
 
         document.body.appendChild(notification);
 
+        // Add entrance animation
         setTimeout(() => {
             notification.style.transform = 'translateX(0)';
+            notification.style.boxShadow = '0 12px 35px rgba(0, 0, 0, 0.4)';
         }, 100);
 
+        // Add pulse effect for important messages
+        if (type === 'error' || type === 'success') {
+            notification.style.animation = 'notificationPulse 2s ease-in-out infinite';
+        }
+
+        // Auto-remove after longer duration for better readability
         setTimeout(() => {
-            notification.style.transform = 'translateX(100%)';
+            notification.style.transform = 'translateX(120%)';
+            notification.style.opacity = '0';
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
                 }
-            }, 300);
-        }, 3000);
+            }, 400);
+        }, 5000);
+    }
+
+    showCentralMessage(message, type = 'info') {
+        // Remove any existing central message
+        const existingMessage = document.getElementById('central-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        const centralNotification = document.createElement('div');
+        centralNotification.id = 'central-message';
+        centralNotification.className = `central-notification central-notification-${type}`;
+        centralNotification.textContent = message;
+        
+        Object.assign(centralNotification.style, {
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            padding: '25px 35px',
+            borderRadius: '20px',
+            color: 'white',
+            fontWeight: '800',
+            fontSize: '20px',
+            zIndex: '2500',
+            maxWidth: '500px',
+            minWidth: '400px',
+            boxShadow: '0 15px 40px rgba(0, 0, 0, 0.4)',
+            opacity: '0',
+            transition: 'all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+            border: '3px solid rgba(255, 255, 255, 0.3)',
+            backdropFilter: 'blur(15px)',
+            textAlign: 'center',
+            lineHeight: '1.5',
+            background: 'linear-gradient(135deg, #667eea, #764ba2)'
+        });
+
+        document.body.appendChild(centralNotification);
+
+        // Add entrance animation
+        setTimeout(() => {
+            centralNotification.style.opacity = '1';
+            centralNotification.style.transform = 'translate(-50%, -50%) scale(1.1)';
+        }, 100);
+
+        // Add pulse effect
+        centralNotification.style.animation = 'centralMessagePulse 3s ease-in-out infinite';
+
+        // Auto-remove after longer duration for guessing game hints
+        setTimeout(() => {
+            centralNotification.style.opacity = '0';
+            centralNotification.style.transform = 'translate(-50%, -50%) scale(0.9)';
+            setTimeout(() => {
+                if (centralNotification.parentNode) {
+                    centralNotification.parentNode.removeChild(centralNotification);
+                }
+            }, 500);
+        }, 4000);
     }
 
     showRematchRequestPopup() {
