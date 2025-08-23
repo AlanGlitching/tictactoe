@@ -1197,6 +1197,52 @@ footer {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Mahjong Theme Specific Card Styles */
+.memory-card[data-theme="mahjong"] .card-back {
+    background: linear-gradient(135deg, #8B4513, #A0522D);
+    color: #FFD700;
+    font-size: 1.8rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    border: 2px solid #654321;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.memory-card[data-theme="mahjong"] .card-front {
+    background: linear-gradient(135deg, #CD853F, #DEB887);
+    color: #8B4513;
+    font-size: 2rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    border: 2px solid #8B4513;
+}
+
+.memory-card[data-theme="mahjong"]:hover .card-front {
+    background: linear-gradient(135deg, #D2B48C, #E6D3A3);
+    transform: scale(1.05);
+}
+
+/* Animal Theme Specific Card Styles */
+.memory-card[data-theme="animals"] .card-back {
+    background: linear-gradient(135deg, #4CAF50, #66BB6A);
+    color: white;
+    font-size: 2rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    border: 2px solid #388E3C;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.memory-card[data-theme="animals"] .card-front {
+    background: linear-gradient(135deg, #81C784, #A5D6A7);
+    color: #2E7D32;
+    font-size: 2rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    border: 2px solid #4CAF50;
+}
+
+.memory-card[data-theme="animals"]:hover .card-front {
+    background: linear-gradient(135deg, #A5D6A7, #C8E6C9);
+    transform: scale(1.05);
+}
+
 /* Difficulty Selection Styles */
 .difficulty-selection h3 {
     color: white;
@@ -1339,6 +1385,42 @@ footer {
     line-height: 1.3;
 }
 
+/* Mahjong Theme Specific Styles */
+.theme-option[data-theme="mahjong"] .theme-icon {
+    /* Ensure mahjong symbols are visible on all devices */
+    color: #FFD700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+.theme-option[data-theme="mahjong"]:hover .theme-icon {
+    color: #FFED4E;
+    transform: scale(1.1);
+    transition: all 0.3s ease;
+}
+
+.theme-option[data-theme="mahjong"].selected .theme-icon {
+    color: #FFD700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Animal Theme Specific Styles */
+.theme-option[data-theme="animals"] .theme-icon {
+    color: #4CAF50;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.theme-option[data-theme="animals"]:hover .theme-icon {
+    color: #66BB6A;
+    transform: scale(1.1);
+    transition: all 0.3s ease;
+}
+
+.theme-option[data-theme="animals"].selected .theme-icon {
+    color: #4CAF50;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+}
+
 .game-stats {
     display: flex;
     justify-content: space-around;
@@ -1477,5 +1559,96 @@ footer {
     
     .card-front, .card-back {
         font-size: 2rem;
+    }
+} 
+
+/* Responsive Design for Different Devices */
+@media (max-width: 768px) {
+    .theme-selection {
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+    }
+    
+    .theme-option {
+        min-width: 200px;
+    }
+    
+    .difficulty-options {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+    
+    .memory-card[data-theme="mahjong"] .card-back,
+    .memory-card[data-theme="animals"] .card-back {
+        font-size: 1.5rem;
+    }
+    
+    .memory-card[data-theme="mahjong"] .card-front,
+    .memory-card[data-theme="animals"] .card-front {
+        font-size: 1.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .theme-selection {
+        gap: 15px;
+    }
+    
+    .theme-option {
+        min-width: 180px;
+        padding: 15px;
+    }
+    
+    .difficulty-options {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .memory-card[data-theme="mahjong"] .card-back,
+    .memory-card[data-theme="animals"] .card-back {
+        font-size: 1.3rem;
+    }
+    
+    .memory-card[data-theme="mahjong"] .card-front,
+    .memory-card[data-theme="animals"] .card-front {
+        font-size: 1.6rem;
+    }
+}
+
+/* Cross-platform compatibility for mahjong symbols */
+@supports not (font-variant-emoji: emoji) {
+    .theme-option[data-theme="mahjong"] .theme-icon {
+        /* Fallback for devices that don't support emoji fonts well */
+        background: linear-gradient(135deg, #FFD700, #FFA500);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-weight: bold;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .theme-option[data-theme="mahjong"] .theme-icon {
+        color: #000000;
+        text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.9);
+    }
+    
+    .theme-option[data-theme="animals"] .theme-icon {
+        color: #000000;
+        text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.9);
+    }
+    
+    .memory-card[data-theme="mahjong"] .card-back {
+        background: #8B4513;
+        color: #FFFFFF;
+        border: 3px solid #000000;
+    }
+    
+    .memory-card[data-theme="animals"] .card-back {
+        background: #2E7D32;
+        color: #FFFFFF;
+        border: 3px solid #000000;
     }
 } 

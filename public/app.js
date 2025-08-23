@@ -1185,6 +1185,7 @@ class TicTacToeMultiplayerClient {
             const cardElement = document.createElement('div');
             cardElement.className = 'memory-card';
             cardElement.dataset.index = index;
+            cardElement.dataset.theme = this.selectedTheme;
             
             if (card.isMatched) {
                 cardElement.classList.add('matched');
