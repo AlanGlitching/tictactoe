@@ -8,6 +8,16 @@ class TicTacToeMultiplayerClient {
         this.pendingAction = null; // For confirmation modal
         this.selectedDifficulty = 'medium';
         
+        // Memory game state
+        this.memoryCards = [];
+        this.flippedCards = [];
+        this.matchedPairs = 0;
+        this.moves = 0;
+        this.gameTimer = null;
+        this.gameStartTime = 0;
+        this.selectedMemorySize = 4;
+        this.selectedTheme = 'animals';
+        
         this.initializeElements();
         this.attachEventListeners();
         this.showWelcomeScreen();
@@ -23,6 +33,7 @@ class TicTacToeMultiplayerClient {
         this.vsAiScreen = document.getElementById('vs-ai-screen');
         this.quickmatchScreen = document.getElementById('quickmatch-screen');
         this.guessingScreen = document.getElementById('guessing-screen');
+        this.memoryScreen = document.getElementById('memory-screen');
         this.gameScreen = document.getElementById('game-screen');
         
         // Welcome elements
@@ -31,6 +42,7 @@ class TicTacToeMultiplayerClient {
         // Choice elements
         this.choiceTicTacToeBtn = document.getElementById('choice-create-btn'); // Repurposed as TicTacToe
         this.choiceGuessingBtn = document.getElementById('choice-guessing-btn'); // Repurposed as Guessing Numbers
+        this.choiceMemoryBtn = document.getElementById('choice-memory-btn'); // Memory Cards
         this.backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
         
         // TicTacToe menu elements
@@ -63,6 +75,7 @@ class TicTacToeMultiplayerClient {
         this.backToChoiceBtn3 = document.getElementById('back-to-choice-btn3');
         this.backToChoiceBtn4 = document.getElementById('back-to-choice-btn4');
         this.backToChoiceBtn5 = document.getElementById('back-to-choice-btn5');
+        this.backToChoiceBtn6 = document.getElementById('back-to-choice-btn6');
         
         // Feedback elements
         this.createNameFeedback = document.getElementById('create-name-feedback');
@@ -88,6 +101,15 @@ class TicTacToeMultiplayerClient {
         this.testPlayerLeftBtn = document.getElementById('test-player-left-btn');
         this.attemptsLeftSpan = document.getElementById('attempts-left');
         this.previousGuessesDiv = document.getElementById('previous-guesses');
+        this.memoryBoard = document.getElementById('memory-board');
+        this.memoryMoves = document.getElementById('memory-moves');
+        this.memoryPairs = document.getElementById('memory-pairs');
+        this.memoryTime = document.getElementById('memory-time');
+        this.newGameBtn = document.getElementById('new-game-btn');
+        this.difficultySelection = document.getElementById('difficulty-selection');
+        this.gameInterface = document.getElementById('game-interface');
+        this.startMemoryGameBtn = document.getElementById('start-memory-game-btn');
+        this.changeDifficultyBtn = document.getElementById('change-difficulty-btn');
         
         // Modal elements
         this.confirmationModal = document.getElementById('confirmation-modal');
@@ -102,12 +124,14 @@ class TicTacToeMultiplayerClient {
         this.startBtn.addEventListener('click', () => this.showChoiceScreen());
         this.choiceTicTacToeBtn.addEventListener('click', () => this.showTicTacToeMenu());
         this.choiceGuessingBtn.addEventListener('click', () => this.showGuessingScreen());
+        this.choiceMemoryBtn.addEventListener('click', () => this.showMemoryScreen());
         this.backToWelcomeBtn.addEventListener('click', () => this.showWelcomeScreen());
         this.backToChoiceBtn.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn2.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn3.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn4.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn5.addEventListener('click', () => this.showChoiceScreen());
+        this.backToChoiceBtn6.addEventListener('click', () => this.showChoiceScreen());
         this.tictactoeVsAiBtn.addEventListener('click', () => this.showVsAiScreen());
         this.tictactoeCreateBtn.addEventListener('click', () => this.showCreateScreen());
         this.tictactoeQuickmatchBtn.addEventListener('click', () => this.showQuickmatchScreen());
@@ -151,6 +175,9 @@ class TicTacToeMultiplayerClient {
         this.leaveGameBtn.addEventListener('click', () => this.confirmAction('leave'));
         // 移除測試暫停按鈕的監聽器
         // this.testPauseBtn.addEventListener('click', () => this.testPause());
+        this.newGameBtn.addEventListener('click', () => this.initializeMemoryGame());
+        this.startMemoryGameBtn.addEventListener('click', () => this.startMemoryGame());
+        this.changeDifficultyBtn.addEventListener('click', () => this.showDifficultySelection());
         this.testPlayerLeftBtn.addEventListener('click', () => this.testPlayerLeft());
         
         // Modal events
@@ -372,6 +399,32 @@ class TicTacToeMultiplayerClient {
         this.initializeGuessingGame();
     }
 
+    showMemoryScreen() {
+        this.hideAllScreens();
+        this.memoryScreen.classList.remove('hidden');
+        
+        // Initialize the memory game
+        this.initializeMemoryGame();
+    }
+
+    showDifficultySelection() {
+        // Show difficulty selection, hide game interface
+        this.difficultySelection.style.display = 'block';
+        this.gameInterface.style.display = 'none';
+        
+        // Reset game state
+        this.memoryCards = [];
+        this.flippedCards = [];
+        this.matchedPairs = 0;
+        this.moves = 0;
+        
+        // Clear timer
+        if (this.gameTimer) {
+            clearInterval(this.gameTimer);
+            this.gameTimer = null;
+        }
+    }
+
     showGameScreen() {
         this.hideAllScreens();
         this.gameScreen.classList.remove('hidden');
@@ -388,7 +441,7 @@ class TicTacToeMultiplayerClient {
     }
 
     hideAllScreens() {
-        [this.welcomeScreen, this.choiceScreen, this.tictactoeMenuScreen, this.createScreen, this.joinScreen, this.vsAiScreen, this.quickmatchScreen, this.guessingScreen, this.gameScreen].forEach(screen => {
+        [this.welcomeScreen, this.choiceScreen, this.tictactoeMenuScreen, this.createScreen, this.joinScreen, this.vsAiScreen, this.quickmatchScreen, this.guessingScreen, this.memoryScreen, this.gameScreen].forEach(screen => {
             screen.classList.add('hidden');
         });
     }
@@ -949,6 +1002,292 @@ class TicTacToeMultiplayerClient {
         }
 
         rangeInfo.textContent = rangeText;
+    }
+
+    initializeMemoryGame() {
+        // Clear previous game state
+        this.memoryCards = [];
+        this.flippedCards = [];
+        this.matchedPairs = 0;
+        this.moves = 0;
+        
+        // Clear timer
+        if (this.gameTimer) {
+            clearInterval(this.gameTimer);
+            this.gameTimer = null;
+        }
+        
+        // Show difficulty selection
+        this.difficultySelection.style.display = 'block';
+        this.gameInterface.style.display = 'none';
+        
+        // Add difficulty selection event listeners
+        this.addDifficultySelectionListeners();
+        
+        console.log('Memory game initialized, waiting for difficulty selection');
+    }
+
+    addDifficultySelectionListeners() {
+        const difficultyOptions = document.querySelectorAll('.difficulty-option');
+        const themeOptions = document.querySelectorAll('.theme-option');
+        
+        // Remove existing listeners to avoid duplicates
+        difficultyOptions.forEach(option => {
+            option.removeEventListener('click', this.handleDifficultySelection);
+            option.classList.remove('selected');
+        });
+        
+        themeOptions.forEach(option => {
+            option.removeEventListener('click', this.handleThemeSelection);
+            option.classList.remove('selected');
+        });
+        
+        // Add new listeners
+        difficultyOptions.forEach(option => {
+            option.addEventListener('click', this.handleDifficultySelection.bind(this));
+        });
+        
+        themeOptions.forEach(option => {
+            option.addEventListener('click', this.handleThemeSelection.bind(this));
+        });
+    }
+
+    handleDifficultySelection(event) {
+        const selectedOption = event.currentTarget;
+        const size = parseInt(selectedOption.dataset.size);
+        
+        // Remove selection from all options
+        document.querySelectorAll('.difficulty-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        // Add selection to clicked option
+        selectedOption.classList.add('selected');
+        
+        // Store selected difficulty
+        this.selectedMemorySize = size;
+        
+        // Enable start button
+        this.startMemoryGameBtn.disabled = false;
+        
+        console.log('Difficulty selected:', size);
+    }
+
+    handleThemeSelection(event) {
+        const selectedOption = event.currentTarget;
+        const theme = selectedOption.dataset.theme;
+        
+        // Remove selection from all options
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        // Add selection to clicked option
+        selectedOption.classList.add('selected');
+        
+        // Store selected theme
+        this.selectedTheme = theme;
+        
+        console.log('Theme selected:', theme);
+    }
+
+    startMemoryGame() {
+        if (!this.selectedMemorySize) {
+            this.showError('Please select a difficulty level first');
+            return;
+        }
+        
+        // Hide difficulty selection, show game interface
+        this.difficultySelection.style.display = 'none';
+        this.gameInterface.style.display = 'block';
+        
+        // Create cards based on selected size
+        this.createMemoryCards(this.selectedMemorySize);
+        
+        // Start the game
+        this.gameStartTime = Date.now();
+        this.gameTimer = setInterval(() => {
+            this.updateMemoryTime();
+        }, 1000);
+        
+        console.log('Memory game started with size:', this.selectedMemorySize);
+    }
+
+    createMemoryCards(size) {
+        // Define card symbols based on theme and size
+        let allSymbols = [];
+        
+        if (this.selectedTheme === 'mahjong') {
+            // Mahjong tiles symbols
+            allSymbols = [
+                '🀀', '🀁', '🀂', '🀃', '🀄', '🀅', '🀆', '🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏',
+                '🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘', '🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡',
+                '🀢', '🀣', '🀤', '🀥', '🀦', '🀧', '🀨', '🀩', '🀪', '🀫', '🀬', '🀭', '🀮', '🀯', '🀰', '🀱', '🀲', '🀳',
+                '🀴', '🀵', '🀶', '🀷', '🀸', '🀹', '🀺', '🀻', '🀼', '🀽', '🀾', '🀿', '🁀', '🁁', '🁂', '🁃', '🁄', '🁅'
+            ];
+        } else {
+            // Animal emojis (default)
+            allSymbols = [
+                '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', 
+                '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗',
+                '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🕸️'
+            ];
+        }
+        
+        // Calculate how many pairs we need
+        const totalCards = size * size;
+        const pairsNeeded = Math.floor(totalCards / 2);
+        
+        // Select symbols for this game
+        const selectedSymbols = allSymbols.slice(0, pairsNeeded);
+        const cards = [];
+        
+        // Create pairs
+        selectedSymbols.forEach(symbol => {
+            cards.push({ id: `${symbol}-1`, symbol: symbol, isFlipped: false, isMatched: false });
+            cards.push({ id: `${symbol}-2`, symbol: symbol, isFlipped: false, isMatched: false });
+        });
+        
+        // If odd number of cards, add one extra card (will be unmatched)
+        if (totalCards % 2 === 1) {
+            const extraSymbol = allSymbols[pairsNeeded];
+            cards.push({ id: `${extraSymbol}-extra`, symbol: extraSymbol, isFlipped: false, isMatched: false, isExtra: true });
+        }
+        
+        // Shuffle cards
+        this.memoryCards = this.shuffleArray(cards);
+        
+        // Update UI
+        this.renderMemoryBoard();
+        this.updateMemoryStats();
+        
+        console.log(`Created ${cards.length} cards with ${pairsNeeded} pairs using ${this.selectedTheme} theme`);
+    }
+
+    shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    renderMemoryBoard() {
+        if (!this.memoryBoard) return;
+        
+        this.memoryBoard.innerHTML = '';
+        
+        // Set grid columns based on selected size
+        this.memoryBoard.style.gridTemplateColumns = `repeat(${this.selectedMemorySize}, 1fr)`;
+        
+        this.memoryCards.forEach((card, index) => {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'memory-card';
+            cardElement.dataset.index = index;
+            
+            if (card.isMatched) {
+                cardElement.classList.add('matched');
+            } else if (card.isFlipped) {
+                cardElement.classList.add('flipped');
+            }
+            
+            if (card.isExtra) {
+                cardElement.classList.add('extra-card');
+            }
+            
+            cardElement.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-front">❓</div>
+                    <div class="card-back">${card.symbol}</div>
+                </div>
+            `;
+            
+            cardElement.addEventListener('click', () => this.flipCard(index));
+            this.memoryBoard.appendChild(cardElement);
+        });
+    }
+
+    flipCard(index) {
+        const card = this.memoryCards[index];
+        
+        // Don't flip if card is already flipped, matched, or if we're waiting
+        if (card.isFlipped || card.isMatched || this.flippedCards.length >= 2) {
+            return;
+        }
+        
+        // Flip the card
+        card.isFlipped = true;
+        this.flippedCards.push(index);
+        
+        // Update UI
+        this.renderMemoryBoard();
+        
+        // Check if we have two flipped cards
+        if (this.flippedCards.length === 2) {
+            this.moves++;
+            this.updateMemoryStats();
+            
+            // Check for match
+            const card1 = this.memoryCards[this.flippedCards[0]];
+            const card2 = this.memoryCards[this.flippedCards[1]];
+            
+            if (card1.symbol === card2.symbol) {
+                // Match found!
+                card1.isMatched = true;
+                card2.isMatched = true;
+                this.matchedPairs++;
+                
+                this.flippedCards = [];
+                this.updateMemoryStats();
+                
+                // Check if game is complete
+                const totalPairs = Math.floor((this.selectedMemorySize * this.selectedMemorySize) / 2);
+                if (this.matchedPairs === totalPairs) {
+                    this.endMemoryGame();
+                }
+            } else {
+                // No match, flip back after delay
+                setTimeout(() => {
+                    card1.isFlipped = false;
+                    card2.isFlipped = false;
+                    this.flippedCards = [];
+                    this.renderMemoryBoard();
+                }, 1000);
+            }
+        }
+    }
+
+    updateMemoryStats() {
+        if (this.memoryMoves) this.memoryMoves.textContent = this.moves;
+        if (this.memoryPairs) this.memoryPairs.textContent = this.matchedPairs;
+    }
+
+    updateMemoryTime() {
+        if (!this.gameStartTime || !this.memoryTime) return;
+        
+        const elapsed = Math.floor((Date.now() - this.gameStartTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        
+        this.memoryTime.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    endMemoryGame() {
+        // Stop timer
+        if (this.gameTimer) {
+            clearInterval(this.gameTimer);
+            this.gameTimer = null;
+        }
+        
+        const timeElapsed = Math.floor((Date.now() - this.gameStartTime) / 1000);
+        const minutes = Math.floor(timeElapsed / 60);
+        const seconds = timeElapsed % 60;
+        
+        // Calculate total pairs needed
+        const totalPairs = Math.floor((this.selectedMemorySize * this.selectedMemorySize) / 2);
+        
+        this.showSuccess(`🎉 Congratulations! You completed the ${this.selectedMemorySize}x${this.selectedMemorySize} game in ${this.moves} moves and ${minutes}:${seconds.toString().padStart(2, '0')}!`);
     }
 
     endGuessingGame() {

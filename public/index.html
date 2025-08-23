@@ -38,6 +38,11 @@
                         <div class="choice-title">Guessing Numbers</div>
                         <div class="choice-desc">Guess the AI's number in 10 tries</div>
                     </button>
+                    <button id="choice-memory-btn" class="btn btn-success choice-btn">
+                        <div class="choice-icon">🃏</div>
+                        <div class="choice-title">Memory Cards</div>
+                        <div class="choice-desc">Flip cards to find matching pairs</div>
+                    </button>
                 </div>
                 <button id="back-to-welcome-btn" class="btn btn-link">← Back</button>
             </div>
@@ -181,6 +186,92 @@
                     <div class="previous-guesses" id="previous-guesses"></div>
                 </div>
                 <button id="back-to-choice-btn5" class="btn btn-link">← Back to Games</button>
+            </div>
+        </div>
+
+        <!-- Memory Cards Game Screen -->
+        <div id="memory-screen" class="screen hidden">
+            <div class="memory-game-content">
+                <h2>�� Memory Cards</h2>
+                
+                <!-- Difficulty Selection -->
+                <div class="difficulty-selection" id="difficulty-selection">
+                    <h3>Choose Theme</h3>
+                    <div class="theme-selection">
+                        <button class="theme-option selected" data-theme="animals">
+                            <div class="theme-icon">🐾</div>
+                            <div class="theme-name">Animals</div>
+                            <div class="theme-desc">Cute animal emojis</div>
+                        </button>
+                        <button class="theme-option" data-theme="mahjong">
+                            <div class="theme-icon">🀄</div>
+                            <div class="theme-name">Mahjong</div>
+                            <div class="theme-desc">Traditional mahjong tiles</div>
+                        </button>
+                    </div>
+                    
+                    <h3 style="margin-top: 30px; margin-bottom: 20px;">Choose Game Size</h3>
+                    <div class="difficulty-options">
+                        <button class="difficulty-option" data-size="2">
+                            <div class="difficulty-size">2 × 2</div>
+                            <div class="difficulty-cards">4 Cards (2 Pairs)</div>
+                            <div class="difficulty-desc">Easy - Perfect for beginners</div>
+                        </button>
+                        <button class="difficulty-option" data-size="3">
+                            <div class="difficulty-size">3 × 3</div>
+                            <div class="difficulty-cards">9 Cards (4 Pairs + 1)</div>
+                            <div class="difficulty-desc">Medium - Balanced challenge</div>
+                        </button>
+                        <button class="difficulty-option" data-size="4">
+                            <div class="difficulty-size">4 × 4</div>
+                            <div class="difficulty-cards">16 Cards (8 Pairs)</div>
+                            <div class="difficulty-desc">Hard - Classic memory game</div>
+                        </button>
+                        <button class="difficulty-option" data-size="5">
+                            <div class="difficulty-size">5 × 5</div>
+                            <div class="difficulty-cards">25 Cards (12 Pairs + 1)</div>
+                            <div class="difficulty-desc">Expert - Ultimate challenge</div>
+                        </button>
+                        <button class="difficulty-option" data-size="6">
+                            <div class="difficulty-size">6 × 6</div>
+                            <div class="difficulty-cards">36 Cards (18 Pairs)</div>
+                            <div class="difficulty-desc">Master - Memory master level</div>
+                        </button>
+                        <button class="difficulty-option" data-size="8">
+                            <div class="difficulty-size">8 × 8</div>
+                            <div class="difficulty-cards">64 Cards (32 Pairs)</div>
+                            <div class="difficulty-desc">Legendary - Ultimate memory test</div>
+                        </button>
+                    </div>
+                    
+                    <button id="start-memory-game-btn" class="btn btn-primary btn-large" disabled>Start Game</button>
+                </div>
+
+                <!-- Game Interface (Hidden initially) -->
+                <div class="game-interface" id="game-interface" style="display: none;">
+                    <div class="game-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Moves:</span>
+                            <span class="stat-value" id="memory-moves">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Pairs Found:</span>
+                            <span class="stat-value" id="memory-pairs">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Time:</span>
+                            <span class="stat-value" id="memory-time">00:00</span>
+                        </div>
+                    </div>
+                    <div class="memory-board" id="memory-board">
+                        <!-- Cards will be generated here -->
+                    </div>
+                    <div class="memory-controls">
+                        <button id="new-game-btn" class="btn btn-primary">New Game</button>
+                        <button id="change-difficulty-btn" class="btn btn-secondary">Change Difficulty</button>
+                        <button id="back-to-choice-btn6" class="btn btn-link">← Back to Games</button>
+                    </div>
+                </div>
             </div>
         </div>
 
