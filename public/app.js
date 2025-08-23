@@ -22,6 +22,7 @@ class TicTacToeMultiplayerClient {
         this.joinScreen = document.getElementById('join-screen');
         this.vsAiScreen = document.getElementById('vs-ai-screen');
         this.quickmatchScreen = document.getElementById('quickmatch-screen');
+        this.guessingScreen = document.getElementById('guessing-screen');
         this.gameScreen = document.getElementById('game-screen');
         
         // Welcome elements
@@ -29,7 +30,7 @@ class TicTacToeMultiplayerClient {
         
         // Choice elements
         this.choiceTicTacToeBtn = document.getElementById('choice-create-btn'); // Repurposed as TicTacToe
-        this.choiceComingSoonBtn = document.getElementById('choice-join-btn'); // Repurposed as Coming Soon
+        this.choiceGuessingBtn = document.getElementById('choice-guessing-btn'); // Repurposed as Guessing Numbers
         this.backToWelcomeBtn = document.getElementById('back-to-welcome-btn');
         
         // TicTacToe menu elements
@@ -49,6 +50,8 @@ class TicTacToeMultiplayerClient {
         this.startAiGameBtn = document.getElementById('start-ai-game-btn');
         this.quickmatchPlayerNameInput = document.getElementById('quickmatch-player-name');
         this.findMatchBtn = document.getElementById('find-match-btn');
+        this.guessingNumberInput = document.getElementById('guessing-number-input');
+        this.submitGuessBtn = document.getElementById('submit-guess-btn');
         
         // Debug: Check if elements are found
         console.log('AI elements found:', {
@@ -59,6 +62,7 @@ class TicTacToeMultiplayerClient {
         this.backToChoiceBtn2 = document.getElementById('back-to-choice-btn2');
         this.backToChoiceBtn3 = document.getElementById('back-to-choice-btn3');
         this.backToChoiceBtn4 = document.getElementById('back-to-choice-btn4');
+        this.backToChoiceBtn5 = document.getElementById('back-to-choice-btn5');
         
         // Feedback elements
         this.createNameFeedback = document.getElementById('create-name-feedback');
@@ -66,6 +70,7 @@ class TicTacToeMultiplayerClient {
         this.joinIdFeedback = document.getElementById('join-id-feedback');
         this.aiNameFeedback = document.getElementById('ai-name-feedback');
         this.quickmatchNameFeedback = document.getElementById('quickmatch-name-feedback');
+        this.guessingNumberFeedback = document.getElementById('guessing-number-feedback');
         
         // Game elements
         this.gameBoard = document.getElementById('game-board');
@@ -80,6 +85,9 @@ class TicTacToeMultiplayerClient {
         // 移除重置遊戲按鈕的引用
         // this.resetGameBtn = document.getElementById('reset-game-btn');
         this.leaveGameBtn = document.getElementById('leave-game-btn');
+        this.testPlayerLeftBtn = document.getElementById('test-player-left-btn');
+        this.attemptsLeftSpan = document.getElementById('attempts-left');
+        this.previousGuessesDiv = document.getElementById('previous-guesses');
         
         // Modal elements
         this.confirmationModal = document.getElementById('confirmation-modal');
@@ -93,12 +101,13 @@ class TicTacToeMultiplayerClient {
         // Navigation events
         this.startBtn.addEventListener('click', () => this.showChoiceScreen());
         this.choiceTicTacToeBtn.addEventListener('click', () => this.showTicTacToeMenu());
-        this.choiceComingSoonBtn.addEventListener('click', () => this.showComingSoonMessage());
+        this.choiceGuessingBtn.addEventListener('click', () => this.showGuessingScreen());
         this.backToWelcomeBtn.addEventListener('click', () => this.showWelcomeScreen());
         this.backToChoiceBtn.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn2.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn3.addEventListener('click', () => this.showTicTacToeMenu());
         this.backToChoiceBtn4.addEventListener('click', () => this.showTicTacToeMenu());
+        this.backToChoiceBtn5.addEventListener('click', () => this.showTicTacToeMenu());
         this.tictactoeVsAiBtn.addEventListener('click', () => this.showVsAiScreen());
         this.tictactoeCreateBtn.addEventListener('click', () => this.showCreateScreen());
         this.tictactoeQuickmatchBtn.addEventListener('click', () => this.showQuickmatchScreen());
@@ -109,6 +118,7 @@ class TicTacToeMultiplayerClient {
         this.createGameBtn.addEventListener('click', () => this.createGame());
         this.joinGameBtn.addEventListener('click', () => this.joinGame());
         this.findMatchBtn.addEventListener('click', () => this.findMatch());
+        this.submitGuessBtn.addEventListener('click', () => this.submitGuess());
         
         // Add debug for AI button
         if (this.startAiGameBtn) {
@@ -127,6 +137,7 @@ class TicTacToeMultiplayerClient {
         this.joinGameIdInput.addEventListener('input', () => this.validateJoinForm());
         this.aiPlayerNameInput.addEventListener('input', () => this.validateAiForm());
         this.quickmatchPlayerNameInput.addEventListener('input', () => this.validateQuickmatchForm());
+        this.guessingNumberInput.addEventListener('input', () => this.validateGuessingForm());
 
         // Difficulty selection
         document.querySelectorAll('.difficulty-btn').forEach(btn => {
@@ -140,6 +151,7 @@ class TicTacToeMultiplayerClient {
         this.leaveGameBtn.addEventListener('click', () => this.confirmAction('leave'));
         // 移除測試暫停按鈕的監聽器
         // this.testPauseBtn.addEventListener('click', () => this.testPause());
+        this.testPlayerLeftBtn.addEventListener('click', () => this.testPlayerLeft());
         
         // Modal events
         this.modalConfirm.addEventListener('click', () => this.executeConfirmedAction());
@@ -165,6 +177,10 @@ class TicTacToeMultiplayerClient {
 
         this.aiPlayerNameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && this.startAiGameBtn.disabled === false) this.startAiGame();
+        });
+
+        this.guessingNumberInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && this.submitGuessBtn.disabled === false) this.submitGuess();
         });
 
         // Board events
@@ -235,6 +251,14 @@ class TicTacToeMultiplayerClient {
         if (gameId.length < 8) return { valid: false, message: 'Game ID too short' };
         if (!/^[a-zA-Z0-9-]+$/.test(gameId)) return { valid: false, message: 'Invalid Game ID format' };
         return { valid: true, message: '✓ Valid Game ID' };
+    }
+
+    validateGuess(guess) {
+        if (guess.length === 0) return { valid: false, message: 'Please enter a number' };
+        const num = parseInt(guess);
+        if (isNaN(num)) return { valid: false, message: 'Please enter a valid number' };
+        if (num < 1 || num > 100) return { valid: false, message: 'Number must be between 1 and 100' };
+        return { valid: true, message: '✓ Valid guess' };
     }
 
     updateInputValidation(input, feedback, validation, value) {
@@ -339,6 +363,15 @@ class TicTacToeMultiplayerClient {
         this.validateQuickmatchForm();
     }
 
+    showGuessingScreen() {
+        this.hideAllScreens();
+        this.guessingScreen.classList.remove('hidden');
+        this.guessingNumberInput.focus();
+        
+        // Initialize the guessing game
+        this.initializeGuessingGame();
+    }
+
     showGameScreen() {
         this.hideAllScreens();
         this.gameScreen.classList.remove('hidden');
@@ -355,7 +388,7 @@ class TicTacToeMultiplayerClient {
     }
 
     hideAllScreens() {
-        [this.welcomeScreen, this.choiceScreen, this.tictactoeMenuScreen, this.createScreen, this.joinScreen, this.vsAiScreen, this.quickmatchScreen, this.gameScreen].forEach(screen => {
+        [this.welcomeScreen, this.choiceScreen, this.tictactoeMenuScreen, this.createScreen, this.joinScreen, this.vsAiScreen, this.quickmatchScreen, this.guessingScreen, this.gameScreen].forEach(screen => {
             screen.classList.add('hidden');
         });
     }
@@ -445,6 +478,16 @@ class TicTacToeMultiplayerClient {
         
         this.updateInputValidation(this.quickmatchPlayerNameInput, this.quickmatchNameFeedback, isValid, playerName);
         this.findMatchBtn.disabled = !isValid.valid;
+        
+        return isValid;
+    }
+
+    validateGuessingForm() {
+        const guess = this.guessingNumberInput.value.trim();
+        const isValid = this.validateGuess(guess);
+        
+        this.updateInputValidation(this.guessingNumberInput, this.guessingNumberFeedback, isValid, guess);
+        this.submitGuessBtn.disabled = !isValid.valid;
         
         return isValid;
     }
@@ -758,6 +801,142 @@ class TicTacToeMultiplayerClient {
     //             console.error('Failed to reset game:', error);
     //         }
     //     }
+
+    testPlayerLeft() {
+        console.log('=== TESTING PLAYER LEFT SCREEN ===');
+        
+        // 模擬玩家離開的狀態
+        if (!this.gameState) {
+            this.showError('No game state to test');
+            return;
+        }
+        
+        console.log('Current game state:', this.gameState);
+        
+        // 直接調用showPlayerLeftScreen來測試
+        console.log('Directly calling showPlayerLeftScreen...');
+        this.showPlayerLeftScreen();
+        
+        // 檢查彈出視窗是否被創建
+        const screen = document.getElementById('player-left-screen');
+        if (screen) {
+            console.log('Player left screen created successfully!');
+            console.log('Screen element:', screen);
+            console.log('Screen HTML:', screen.innerHTML);
+            console.log('Screen classes:', screen.className);
+            console.log('Screen computed styles:', window.getComputedStyle(screen));
+            
+            // 檢查按鈕是否存在
+            const waitBtn = document.getElementById('wait-for-player-btn');
+            const leaveBtn = document.getElementById('leave-game-btn');
+            console.log('Wait button:', waitBtn);
+            console.log('Leave button:', leaveBtn);
+            
+            // 檢查內容結構
+            const content = screen.querySelector('.player-left-content');
+            const icon = screen.querySelector('.player-left-icon');
+            const title = screen.querySelector('h2');
+            const description = screen.querySelector('p');
+            const buttons = screen.querySelector('.player-left-buttons');
+            
+            console.log('Content div:', content);
+            console.log('Icon:', icon);
+            console.log('Title:', title);
+            console.log('Description:', description);
+            console.log('Buttons container:', buttons);
+        } else {
+            console.error('Player left screen was not created!');
+        }
+        
+        console.log('=== TEST COMPLETED ===');
+        
+        this.showSuccess('Player left screen should now be visible!');
+    }
+
+    initializeGuessingGame() {
+        // Generate a random number between 1 and 100
+        this.targetNumber = Math.floor(Math.random() * 100) + 1;
+        this.attemptsLeft = 10;
+        this.previousGuesses = [];
+        
+        // Reset UI
+        this.guessingNumberInput.value = '';
+        this.attemptsLeftSpan.textContent = this.attemptsLeft;
+        this.previousGuessesDiv.innerHTML = '';
+        this.submitGuessBtn.disabled = true;
+        
+        // Clear feedback
+        this.guessingNumberFeedback.textContent = '';
+        this.guessingNumberFeedback.classList.remove('success', 'error');
+        this.guessingNumberInput.classList.remove('valid', 'invalid');
+        
+        console.log('Guessing game initialized. Target number:', this.targetNumber);
+    }
+
+    submitGuess() {
+        const validation = this.validateGuessingForm();
+        if (!validation.valid) {
+            this.showError(validation.message);
+            return;
+        }
+
+        const guess = parseInt(this.guessingNumberInput.value);
+        
+        // Add to previous guesses
+        this.previousGuesses.push(guess);
+        
+        // Decrease attempts
+        this.attemptsLeft--;
+        
+        // Check if correct
+        if (guess === this.targetNumber) {
+            this.showSuccess(`🎉 Correct! You found the number in ${11 - this.attemptsLeft} attempts!`);
+            this.endGuessingGame();
+            return;
+        }
+        
+        // Check if out of attempts
+        if (this.attemptsLeft <= 0) {
+            this.showError(`😔 Game Over! The number was ${this.targetNumber}. Better luck next time!`);
+            this.endGuessingGame();
+            return;
+        }
+        
+        // Give hint
+        let hint;
+        if (guess > this.targetNumber) {
+            hint = '📉 Too high! Try a lower number.';
+        } else {
+            hint = '📈 Too low! Try a higher number.';
+        }
+        
+        // Update UI
+        this.attemptsLeftSpan.textContent = this.attemptsLeft;
+        this.updatePreviousGuesses();
+        this.guessingNumberInput.value = '';
+        this.submitGuessBtn.disabled = true;
+        
+        // Show hint
+        this.showMessage(hint, 'info');
+        
+        // Re-validate form
+        this.validateGuessingForm();
+    }
+
+    endGuessingGame() {
+        // Optionally, you might want to reset the game or show a new game screen
+        // For now, just clear the guessing game state
+        this.initializeGuessingGame();
+    }
+
+    updatePreviousGuesses() {
+        this.previousGuessesDiv.innerHTML = '';
+        this.previousGuesses.forEach(guess => {
+            const guessItem = document.createElement('div');
+            guessItem.textContent = guess;
+            this.previousGuessesDiv.appendChild(guessItem);
+        });
+    }
 
     leaveGame() {
         this.showWelcomeScreen();

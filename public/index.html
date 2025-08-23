@@ -33,10 +33,10 @@
                         <div class="choice-title">TicTacToe</div>
                         <div class="choice-desc">Classic 3x3 grid game - Create or join</div>
                     </button>
-                    <button id="choice-join-btn" class="btn btn-secondary choice-btn" disabled>
-                        <div class="choice-icon">🚧</div>
-                        <div class="choice-title">Coming Soon</div>
-                        <div class="choice-desc">More games will be added here!</div>
+                    <button id="choice-guessing-btn" class="btn btn-warning choice-btn">
+                        <div class="choice-icon">🎯</div>
+                        <div class="choice-title">Guessing Numbers</div>
+                        <div class="choice-desc">Guess the AI's number in 10 tries</div>
                     </button>
                 </div>
                 <button id="back-to-welcome-btn" class="btn btn-link">← Back</button>
@@ -157,6 +157,29 @@
             </div>
         </div>
 
+        <!-- Guessing Numbers Game Screen -->
+        <div id="guessing-screen" class="screen hidden">
+            <div class="form-content">
+                <h2>🎯 Guessing Numbers</h2>
+                <div class="game-description">
+                    <p>I'm thinking of a number between 1 and 100. You have 10 chances to guess it!</p>
+                    <p>I'll tell you if your guess is too high or too low.</p>
+                </div>
+                <div class="form-group">
+                    <div class="input-container">
+                        <input type="number" id="guessing-number-input" placeholder="Enter your guess (1-100)" min="1" max="100" required>
+                        <span class="input-feedback" id="guessing-number-feedback"></span>
+                    </div>
+                    <button id="submit-guess-btn" class="btn btn-primary" disabled>Submit Guess</button>
+                </div>
+                <div class="game-info">
+                    <div class="attempts-left">Attempts left: <span id="attempts-left">10</span></div>
+                    <div class="previous-guesses" id="previous-guesses"></div>
+                </div>
+                <button id="back-to-choice-btn5" class="btn btn-link">← Back to Options</button>
+            </div>
+        </div>
+
         <!-- Game Screen -->
         <div id="game-screen" class="screen hidden">
             <div class="game-info">
@@ -193,6 +216,7 @@
             <div class="controls">
                 <button id="rematch-btn" class="btn btn-primary" disabled>Rematch</button>
                 <button id="leave-game-btn" class="btn btn-warning">Leave Game</button>
+                <button id="test-player-left-btn" class="btn btn-info">Test Player Left</button>
             </div>
 
             <!-- Confirmation Modal -->

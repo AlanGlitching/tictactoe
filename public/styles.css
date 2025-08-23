@@ -1063,4 +1063,70 @@ footer {
         height: 70px;
         font-size: 1.8rem;
     }
+}
+
+/* Guessing Numbers Game Styles */
+.game-description {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.game-description p {
+    margin: 10px 0;
+    color: #666;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.game-info {
+    margin-top: 25px;
+    text-align: center;
+}
+
+.attempts-left {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.previous-guesses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.previous-guesses div {
+    background: #f0f0f0;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    border: 2px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.previous-guesses div:hover {
+    border-color: #667eea;
+    background: #e8f0ff;
+    transform: translateY(-2px);
+}
+
+#guessing-number-input {
+    font-size: 18px;
+    text-align: center;
+    font-weight: 600;
+}
+
+#guessing-number-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 } 
