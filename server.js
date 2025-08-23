@@ -385,6 +385,17 @@ app.post('/api/matchmaking/join', (req, res) => {
     }
   }
 
+  // Check if this player is already in an active game
+  for (const [gameId, game] of games.entries()) {
+    for (const [playerId, playerData] of Object.entries(game.players)) {
+      if (playerData.name === playerName.trim()) {
+        return res.status(400).json({ 
+          error: 'You are already in an active game. Please finish your current game first.' 
+        });
+      }
+    }
+  }
+
   const playerId = uuidv4();
   matchmakingQueue.set(playerId, {
     playerName: playerName.trim(),

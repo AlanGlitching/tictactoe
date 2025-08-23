@@ -77,7 +77,8 @@ class TicTacToeMultiplayerClient {
         this.playersListDiv = document.getElementById('players-list');
         this.copyIdBtn = document.getElementById('copy-id-btn');
         this.rematchBtn = document.getElementById('rematch-btn');
-        this.resetGameBtn = document.getElementById('reset-game-btn');
+        // 移除重置遊戲按鈕的引用
+        // this.resetGameBtn = document.getElementById('reset-game-btn');
         this.leaveGameBtn = document.getElementById('leave-game-btn');
         
         // Modal elements
@@ -135,8 +136,10 @@ class TicTacToeMultiplayerClient {
         // Game events
         this.copyIdBtn.addEventListener('click', () => this.copyGameId());
         this.rematchBtn.addEventListener('click', () => this.requestRematch());
-        this.resetGameBtn.addEventListener('click', () => this.confirmAction('reset'));
+        // this.resetGameBtn.addEventListener('click', () => this.confirmAction('reset')); // 移除重置遊戲按鈕的監聽器
         this.leaveGameBtn.addEventListener('click', () => this.confirmAction('leave'));
+        // 移除測試暫停按鈕的監聽器
+        // this.testPauseBtn.addEventListener('click', () => this.testPause());
         
         // Modal events
         this.modalConfirm.addEventListener('click', () => this.executeConfirmedAction());
@@ -273,21 +276,15 @@ class TicTacToeMultiplayerClient {
                 'Are you sure you want to leave the game? Your opponent will be notified.',
                 'Leave Game'
             );
-        } else if (action === 'reset') {
-            this.showModal(
-                'Reset Game',
-                'Are you sure you want to reset the game? This will clear the board and start over.',
-                'Reset Game'
-            );
         }
+        // 移除重置遊戲的確認邏輯
     }
 
     executeConfirmedAction() {
         if (this.pendingAction === 'leave') {
             this.leaveGame();
-        } else if (this.pendingAction === 'reset') {
-            this.resetGame();
         }
+        // 移除重置遊戲的執行邏輯
         this.hideModal();
     }
 
@@ -742,24 +739,25 @@ class TicTacToeMultiplayerClient {
         }
     }
 
-    async resetGame() {
-        if (!this.gameId || !this.playerId) {
-            this.showError('Not connected to a game');
-            return;
-        }
+    // 移除重置遊戲功能
+    // async resetGame() {
+    //     if (!this.gameId || !this.playerId) {
+    //         this.showError('Not connected to a game');
+    //         return;
+    //     }
 
-        try {
-            this.gameState = await this.apiCall(`/game/${this.gameId}/reset`, {
-                method: 'POST',
-                body: JSON.stringify({ playerId: this.playerId })
-            });
+    //     try {
+    //         this.gameState = await this.apiCall(`/game/${this.gameId}/reset`, {
+    //             method: 'POST',
+    //             body: JSON.stringify({ playerId: this.playerId })
+    //         });
             
-            this.updateUI();
-            this.showSuccess('Game has been reset!');
-        } catch (error) {
-            console.error('Failed to reset game:', error);
-        }
-    }
+    //         this.updateUI();
+    //         this.showSuccess('Game has been reset!');
+    //         } catch (error) {
+    //             console.error('Failed to reset game:', error);
+    //         }
+    //     }
 
     leaveGame() {
         this.showWelcomeScreen();
@@ -963,12 +961,8 @@ class TicTacToeMultiplayerClient {
         const isAIGame = this.gameState && this.gameState.isAI;
         const isMatchmakingGame = this.gameState && this.gameState.isMatchmaking;
         
-        // For AI games: no reset button, rematch works immediately
-        // For matchmaking and regular games: both reset and rematch work normally
-        const canReset = gameEnded && !isAIGame;
+        // 移除重置遊戲按鈕的邏輯
         const canRematch = gameEnded && (isAIGame || this.gameState.playerCount === 2);
-        
-        this.resetGameBtn.disabled = !canReset;
         this.rematchBtn.disabled = !canRematch;
         
         // Update rematch button text
