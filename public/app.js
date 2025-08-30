@@ -1204,6 +1204,9 @@ class TicTacToeMultiplayerClient {
         // Set grid columns based on selected size
         this.memoryBoard.style.gridTemplateColumns = `repeat(${this.selectedMemorySize}, 1fr)`;
         
+        console.log('Rendering memory board with theme:', this.selectedTheme);
+        console.log('Memory cards:', this.memoryCards);
+        
         this.memoryCards.forEach((card, index) => {
             const cardElement = document.createElement('div');
             cardElement.className = 'memory-card';
@@ -1219,6 +1222,8 @@ class TicTacToeMultiplayerClient {
             if (card.isExtra) {
                 cardElement.classList.add('extra-card');
             }
+            
+            console.log(`Creating card ${index}: symbol="${card.symbol}", theme="${this.selectedTheme}"`);
             
             cardElement.innerHTML = `
                 <div class="card-inner">
