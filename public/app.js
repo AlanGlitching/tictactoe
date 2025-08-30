@@ -1125,40 +1125,17 @@ class TicTacToeMultiplayerClient {
         let allSymbols = [];
         
         if (this.selectedTheme === 'mahjong') {
-            // Mahjong tiles symbols
-            allSymbols = [
-                '🀀', '🀁', '🀂', '🀃', '🀄', '🀅', '🀆', '🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏',
-                '🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘', '🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡',
-                '🀢', '🀣', '🀤', '🀥', '🀦', '🀧', '🀨', '🀩', '🀪', '🀫', '🀬', '🀭', '🀮', '🀯', '🀰', '🀱', '🀲', '🀳',
-                '🀴', '🀵', '🀶', '🀷', '🀸', '🀹', '🀺', '🀻', '🀼', '🀽', '🀾', '🀿', '🁀', '🁁', '🁂', '🁃', '🁄', '🁅'
-            ];
+            // Mahjong tiles symbols - use simple text for testing
+            allSymbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
         } else if (this.selectedTheme === 'poker') {
-            // Poker/Playing cards symbols
-            allSymbols = [
-                '🂡', '🂢', '🂣', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂭', '🂮', // Spades
-                '🂱', '🂲', '🂳', '🂴', '🂵', '🂶', '🂷', '🂸', '🂹', '🂺', '🂻', '🂽', '🂾', // Hearts
-                '🃁', '🃂', '🃃', '🃄', '🃅', '🃆', '🃇', '🃈', '🃉', '🃊', '🃋', '🃍', '🃎', // Diamonds
-                '🃑', '🃒', '🃓', '🃔', '🃕', '🃖', '🃗', '🃘', '🃙', '🃚', '🃛', '🃝', '🃞'  // Clubs
-            ];
+            // Poker/Playing cards symbols - use simple text for testing
+            allSymbols = ['♠', '♥', '♦', '♣', 'A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2'];
         } else if (this.selectedTheme === 'combined') {
-            // Combined theme - mix of all themes
-            allSymbols = [
-                // Animals (12)
-                '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮',
-                // Mahjong (12)
-                '🀀', '🀁', '🀂', '🀃', '🀄', '🀅', '🀆', '🀇', '🀈', '🀉', '🀊', '🀋',
-                // Poker (12)
-                '🂡', '🂢', '🂣', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂭',
-                // More variety
-                '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗'
-            ];
+            // Combined theme - use simple text for testing
+            allSymbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
         } else {
-            // Animal emojis (default)
-            allSymbols = [
-                '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', 
-                '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗',
-                '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🕸️'
-            ];
+            // Animal emojis (default) - use simple text for testing
+            allSymbols = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮'];
         }
         
         console.log('All symbols array length:', allSymbols.length);
@@ -1251,10 +1228,11 @@ class TicTacToeMultiplayerClient {
                 cardElement.classList.add('extra-card');
             }
             
+            // Simple test - show the symbol directly for debugging
             const cardHTML = `
                 <div class="card-inner">
                     <div class="card-front">❓</div>
-                    <div class="card-back">${card.symbol}</div>
+                    <div class="card-back" style="background: red; color: white; font-size: 24px;">${card.symbol}</div>
                 </div>
             `;
             
