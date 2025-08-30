@@ -1117,6 +1117,10 @@ class TicTacToeMultiplayerClient {
     }
 
     createMemoryCards(size) {
+        console.log('=== CREATE MEMORY CARDS DEBUG ===');
+        console.log('Selected theme:', this.selectedTheme);
+        console.log('Selected size:', size);
+        
         // Define card symbols based on theme and size
         let allSymbols = [];
         
@@ -1157,13 +1161,21 @@ class TicTacToeMultiplayerClient {
             ];
         }
         
+        console.log('All symbols array length:', allSymbols.length);
+        console.log('First 5 symbols:', allSymbols.slice(0, 5));
+        
         // Calculate how many pairs we need
         const totalCards = size * size;
         const pairsNeeded = Math.floor(totalCards / 2);
         
+        console.log('Total cards needed:', totalCards);
+        console.log('Pairs needed:', pairsNeeded);
+        
         // Select symbols for this game
         const selectedSymbols = allSymbols.slice(0, pairsNeeded);
         const cards = [];
+        
+        console.log('Selected symbols for game:', selectedSymbols);
         
         // Create pairs
         selectedSymbols.forEach(symbol => {
@@ -1177,6 +1189,9 @@ class TicTacToeMultiplayerClient {
             cards.push({ id: `${extraSymbol}-extra`, symbol: extraSymbol, isFlipped: false, isMatched: false, isExtra: true });
         }
         
+        console.log('Final cards array:', cards);
+        console.log('First card example:', cards[0]);
+        
         // Shuffle cards
         this.memoryCards = this.shuffleArray(cards);
         
@@ -1185,6 +1200,7 @@ class TicTacToeMultiplayerClient {
         this.updateMemoryStats();
         
         console.log(`Created ${cards.length} cards with ${pairsNeeded} pairs using ${this.selectedTheme} theme`);
+        console.log('=== END CREATE MEMORY CARDS DEBUG ===');
     }
 
     shuffleArray(array) {
@@ -1197,17 +1213,29 @@ class TicTacToeMultiplayerClient {
     }
 
     renderMemoryBoard() {
-        if (!this.memoryBoard) return;
+        if (!this.memoryBoard) {
+            console.error('Memory board element not found!');
+            return;
+        }
+        
+        console.log('=== RENDER MEMORY BOARD DEBUG ===');
+        console.log('Memory board element:', this.memoryBoard);
+        console.log('Selected theme:', this.selectedTheme);
+        console.log('Memory cards array:', this.memoryCards);
         
         this.memoryBoard.innerHTML = '';
         
         // Set grid columns based on selected size
         this.memoryBoard.style.gridTemplateColumns = `repeat(${this.selectedMemorySize}, 1fr)`;
         
-        console.log('Rendering memory board with theme:', this.selectedTheme);
-        console.log('Memory cards:', this.memoryCards);
+        if (!this.memoryCards || this.memoryCards.length === 0) {
+            console.error('No memory cards to render!');
+            return;
+        }
         
         this.memoryCards.forEach((card, index) => {
+            console.log(`Rendering card ${index}:`, card);
+            
             const cardElement = document.createElement('div');
             cardElement.className = 'memory-card';
             cardElement.dataset.index = index;
@@ -1223,18 +1251,23 @@ class TicTacToeMultiplayerClient {
                 cardElement.classList.add('extra-card');
             }
             
-            console.log(`Creating card ${index}: symbol="${card.symbol}", theme="${this.selectedTheme}"`);
-            
-            cardElement.innerHTML = `
+            const cardHTML = `
                 <div class="card-inner">
                     <div class="card-front">❓</div>
                     <div class="card-back">${card.symbol}</div>
                 </div>
             `;
             
+            console.log(`Card ${index} HTML:`, cardHTML);
+            console.log(`Card ${index} symbol: "${card.symbol}"`);
+            
+            cardElement.innerHTML = cardHTML;
+            
             cardElement.addEventListener('click', () => this.flipCard(index));
             this.memoryBoard.appendChild(cardElement);
         });
+        
+        console.log('=== END RENDER DEBUG ===');
     }
 
     flipCard(index) {
