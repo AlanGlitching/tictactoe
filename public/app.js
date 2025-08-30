@@ -18,6 +18,9 @@ class TicTacToeMultiplayerClient {
         this.selectedMemorySize = 4;
         this.selectedTheme = 'animals';
         
+        // API configuration
+        this.API_BASE_URL = 'https://tictactoe-production-6807.up.railway.app';
+        
         this.initializeElements();
         this.attachEventListeners();
         this.showWelcomeScreen();
@@ -688,7 +691,7 @@ class TicTacToeMultiplayerClient {
 
     async apiCall(endpoint, options = {}) {
         try {
-            const response = await fetch(`/api${endpoint}`, {
+            const response = await fetch(`${this.API_BASE_URL}${endpoint}`, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -863,7 +866,7 @@ class TicTacToeMultiplayerClient {
             this.showError('No game state to test');
             return;
         }
-        
+
         console.log('Current game state:', this.gameState);
         
         // 直接調用showPlayerLeftScreen來測試
@@ -1833,26 +1836,22 @@ class TicTacToeMultiplayerClient {
         window.gameClient = new TicTacToeMultiplayerClient();
     });
     
-    // Handle page unload to disconnect player
+    // Handle page unload/disconnect
     window.addEventListener('beforeunload', () => {
         if (window.gameClient && window.gameClient.gameId && window.gameClient.playerId) {
-            console.log('Page unloading, disconnecting player:', window.gameClient.playerId);
+            // Use sendBeacon for reliability
+            const success = navigator.sendBeacon(
+                `${window.gameClient.API_BASE_URL}/api/game/${window.gameClient.gameId}/disconnect`,
+                JSON.stringify({ playerId: window.gameClient.playerId })
+            );
             
-            // Try to send disconnect request
-            try {
-                // Use sendBeacon for reliability
-                const success = navigator.sendBeacon(
-                    `/api/game/${window.gameClient.gameId}/disconnect`,
-                    JSON.stringify({ playerId: window.gameClient.playerId })
-                );
-                
-                if (success) {
-                    console.log('Disconnect request sent successfully');
-                } else {
-                    console.log('Failed to send disconnect request');
-                }
-            } catch (error) {
-                console.error('Error sending disconnect request:', error);
+            if (!success) {
+                // Fallback to fetch if sendBeacon fails
+                fetch(`${window.gameClient.API_BASE_URL}/api/game/${window.gameClient.gameId}/disconnect`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ playerId: window.gameClient.playerId })
+                }).catch(() => {}); // Ignore errors on page unload
             }
         }
     });

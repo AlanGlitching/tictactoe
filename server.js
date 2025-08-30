@@ -811,10 +811,22 @@ app.post('/api/game/:gameId/test-pause', (req, res) => {
   });
 });
 
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'healthy', 
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Serve the main HTML file
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Matchmaking helper function
 function findMatch(excludePlayerId) {
@@ -904,19 +916,19 @@ setInterval(() => {
 }, 3600000);
 
 app.listen(PORT, () => {
-  console.log(`TicTacToe server running on http://localhost:${PORT}`);
-  console.log('Game endpoints:');
-  console.log('  POST /api/game - Create new game');
-  console.log('  GET /api/game/:gameId - Get game state');
-  console.log('  POST /api/game/:gameId/move - Make a move');
-  console.log('  POST /api/game/:gameId/reset - Reset game');
-  console.log('  POST /api/game/:gameId/resume - Resume paused game');
-  console.log('  POST /api/game/:gameId/disconnect - Player disconnect');
-  console.log('  POST /api/game/:gameId/test-pause - Test pause (for debugging)');
-  console.log('  DELETE /api/game/:gameId - Delete game');
-  console.log('Matchmaking endpoints:');
-  console.log('  POST /api/matchmaking/join - Join matchmaking queue');
-  console.log('  POST /api/matchmaking/leave - Leave matchmaking queue');
-  console.log('  GET /api/matchmaking/status/:playerId - Get queue status');
-  console.log('  GET /api/matchmaking/match/:playerId - Get match details');
+    console.log(`TicTacToe server running on http://localhost:${PORT}`);
+    console.log('Game endpoints:');
+    console.log('  POST /api/game - Create new game');
+    console.log('  GET /api/game/:gameId - Get game state   ');
+    console.log('  POST /api/game/:gameId/move - Make a move');
+    console.log('  POST /api/game/:gameId/reset - Reset game');
+    console.log('  POST /api/game/:gameId/resume - Resume paused game');
+    console.log('  POST /api/game/:gameId/disconnect - Player disconnect');
+    console.log('  POST /api/game/:gameId/test-pause - Test pause (for debugging)');
+    console.log('  DELETE /api/game/:gameId - Delete game');
+    console.log('Matchmaking endpoints:');
+    console.log('  POST /api/matchmaking/join - Join matchmaking queue');
+    console.log('  POST /api/matchmaking/leave - Leave matchmaking queue');
+    console.log('  GET /api/matchmaking/status/:playerId - Get queue status');
+    console.log('  GET /api/matchmaking/match/:playerId - Get match details');
 }); 
