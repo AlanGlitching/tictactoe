@@ -86,6 +86,7 @@ class TicTacToeGame {
 
   removePlayer(playerId) {
     if (this.players[playerId]) {
+      const playerName = this.players[playerId].name;
       delete this.players[playerId];
       this.playerCount--;
       
@@ -94,6 +95,13 @@ class TicTacToeGame {
         this.gameStatus = 'paused';
         this.pausedBy = playerId; // Track who caused the pause
         this.pausedAt = new Date();
+        console.log(`Game paused because player ${playerName} (${playerId}) left. Remaining players: ${this.playerCount}`);
+      }
+      
+      // If no players left, mark game as ended
+      if (this.playerCount === 0) {
+        this.gameStatus = 'ended';
+        console.log(`Game ${this.gameId} ended - no players remaining`);
       }
     }
   }
@@ -385,13 +393,17 @@ app.post('/api/matchmaking/join', (req, res) => {
     }
   }
 
-  // Check if this player is already in an active game
+  // Check if this player is already in an active game (only playing or waiting games)
   for (const [gameId, game] of games.entries()) {
-    for (const [playerId, playerData] of Object.entries(game.players)) {
-      if (playerData.name === playerName.trim()) {
-        return res.status(400).json({ 
-          error: 'You are already in an active game. Please finish your current game first.' 
-        });
+    // Only check games that are actively being played or waiting for players
+    // Ignore ended, paused, won, or draw games
+    if (game.gameStatus === 'playing' || game.gameStatus === 'waiting') {
+      for (const [playerId, playerData] of Object.entries(game.players)) {
+        if (playerData.name === playerName.trim()) {
+          return res.status(400).json({ 
+            error: 'You are already in an active game. Please finish your current game first.' 
+          });
+        }
       }
     }
   }
@@ -445,6 +457,19 @@ app.post('/api/matchmaking/leave', (req, res) => {
   res.json({ success: true, message: 'Left matchmaking queue' });
 });
 
+// Clear matchmaking queue (for testing/debugging)
+app.post('/api/matchmaking/clear', (req, res) => {
+  const queueSize = matchmakingQueue.size;
+  matchmakingQueue.clear();
+  console.log(`Cleared matchmaking queue. Removed ${queueSize} players.`);
+  
+  res.json({ 
+    success: true, 
+    message: `Cleared matchmaking queue. Removed ${queueSize} players.`,
+    removedCount: queueSize
+  });
+});
+
 // Get matchmaking status
 app.get('/api/matchmaking/status/:playerId', (req, res) => {
   const { playerId } = req.params;
@@ -467,6 +492,13 @@ app.get('/api/matchmaking/status/:playerId', (req, res) => {
 // Get match details for a player who was matched
 app.get('/api/matchmaking/match/:playerId', (req, res) => {
   const { playerId } = req.params;
+  
+  // First, remove player from matchmaking queue if they're still in it
+  if (matchmakingQueue.has(playerId)) {
+    const playerData = matchmakingQueue.get(playerId);
+    matchmakingQueue.delete(playerId);
+    console.log(`Removed player ${playerData.playerName} from matchmaking queue during match retrieval`);
+  }
   
   // Find if this player is in any pending match
   for (const [gameId, matchData] of pendingMatches.entries()) {
@@ -763,7 +795,8 @@ app.post('/api/game/:gameId/disconnect', (req, res) => {
     return res.status(404).json({ error: 'Player not in game' });
   }
   
-  console.log(`Player ${playerId} disconnecting from game ${gameId}`);
+  const playerName = game.players[playerId].name;
+  console.log(`Player ${playerName} (${playerId}) disconnecting from game ${gameId}`);
   
   // Remove the player and pause the game
   game.removePlayer(playerId);
@@ -771,7 +804,8 @@ app.post('/api/game/:gameId/disconnect', (req, res) => {
   console.log(`Game ${gameId} state after disconnect:`, {
     gameStatus: game.gameStatus,
     pausedBy: game.pausedBy,
-    playerCount: game.playerCount
+    playerCount: game.playerCount,
+    remainingPlayers: Object.keys(game.players).map(id => game.players[id].name)
   });
   
   res.json({ 
@@ -807,6 +841,40 @@ app.post('/api/game/:gameId/test-pause', (req, res) => {
   res.json({ 
     success: true, 
     message: 'Game manually paused for testing',
+    gameState: game.getState()
+  });
+});
+
+// Test endpoint to simulate a player leaving (for testing player left screen)
+app.post('/api/game/:gameId/test-player-left', (req, res) => {
+  const { gameId } = req.params;
+  const { playerId } = req.body;
+  
+  const game = games.get(gameId);
+  if (!game) {
+    return res.status(404).json({ error: 'Game not found' });
+  }
+  
+  if (!game.players[playerId]) {
+    return res.status(404).json({ error: 'Player not in game' });
+  }
+  
+  const playerName = game.players[playerId].name;
+  console.log(`Testing player left: ${playerName} (${playerId}) leaving game ${gameId}`);
+  
+  // Simulate player leaving by removing them and pausing the game
+  game.removePlayer(playerId);
+  
+  console.log(`Game ${gameId} state after simulated player left:`, {
+    gameStatus: game.gameStatus,
+    pausedBy: game.pausedBy,
+    playerCount: game.playerCount,
+    remainingPlayers: Object.keys(game.players).map(id => game.players[id].name)
+  });
+  
+  res.json({ 
+    success: true, 
+    message: 'Player left simulation completed',
     gameState: game.getState()
   });
 });
@@ -894,26 +962,42 @@ function processMatchmakingQueue() {
   return null;
 }
 
-// Clean up old games and matchmaking queue (runs every hour)
+// Clean up old games and matchmaking queue (runs every 5 minutes)
 setInterval(() => {
   // Clean up old games
   console.log(`Current active games: ${games.size}`);
   
-  // Clean up old matchmaking entries (older than 5 minutes)
   const now = Date.now();
-  let cleanedCount = 0;
+  let cleanedGames = 0;
+  let cleanedQueue = 0;
   
-  for (const [playerId, playerData] of matchmakingQueue.entries()) {
-    if (now - playerData.timestamp > 300000) { // 5 minutes
-      matchmakingQueue.delete(playerId);
-      cleanedCount++;
+  // Clean up old games (older than 1 hour or finished games older than 10 minutes)
+  for (const [gameId, game] of games.entries()) {
+    const gameAge = now - game.createdAt.getTime();
+    const shouldClean = gameAge > 3600000 || // 1 hour old
+                       (game.gameStatus === 'won' && gameAge > 600000) || // Won games older than 10 minutes
+                       (game.gameStatus === 'draw' && gameAge > 600000) || // Draw games older than 10 minutes
+                       (game.gameStatus === 'paused' && gameAge > 1800000); // Paused games older than 30 minutes
+    
+    if (shouldClean) {
+      games.delete(gameId);
+      cleanedGames++;
+      console.log(`Cleaned up old game ${gameId} (status: ${game.gameStatus}, age: ${Math.round(gameAge / 60000)} minutes)`);
     }
   }
   
-  if (cleanedCount > 0) {
-    console.log(`Cleaned up ${cleanedCount} old matchmaking entries. Queue size: ${matchmakingQueue.size}`);
+  // Clean up old matchmaking entries (older than 5 minutes)
+  for (const [playerId, playerData] of matchmakingQueue.entries()) {
+    if (now - playerData.timestamp > 300000) { // 5 minutes
+      matchmakingQueue.delete(playerId);
+      cleanedQueue++;
+    }
   }
-}, 3600000);
+  
+  if (cleanedGames > 0 || cleanedQueue > 0) {
+    console.log(`Cleanup: Removed ${cleanedGames} old games and ${cleanedQueue} old queue entries. Active games: ${games.size}, Queue size: ${matchmakingQueue.size}`);
+  }
+}, 300000); // Run every 5 minutes instead of every hour
 
 app.listen(PORT, () => {
     console.log(`TicTacToe server running on http://localhost:${PORT}`);

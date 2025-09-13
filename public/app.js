@@ -7,6 +7,7 @@ class TicTacToeMultiplayerClient {
         this.pollInterval = null;
         this.pendingAction = null; // For confirmation modal
         this.selectedDifficulty = 'medium';
+        this.playerLeftNotified = false; // Prevent duplicate notifications
         
         // Memory game state
         this.memoryCards = [];
@@ -101,7 +102,6 @@ class TicTacToeMultiplayerClient {
         // 移除重置遊戲按鈕的引用
         // this.resetGameBtn = document.getElementById('reset-game-btn');
         this.leaveGameBtn = document.getElementById('leave-game-btn');
-        this.testPlayerLeftBtn = document.getElementById('test-player-left-btn');
         this.attemptsLeftSpan = document.getElementById('attempts-left');
         this.previousGuessesDiv = document.getElementById('previous-guesses');
         this.memoryBoard = document.getElementById('memory-board');
@@ -181,7 +181,6 @@ class TicTacToeMultiplayerClient {
         this.newGameBtn.addEventListener('click', () => this.initializeMemoryGame());
         this.startMemoryGameBtn.addEventListener('click', () => this.startMemoryGame());
         this.changeDifficultyBtn.addEventListener('click', () => this.showDifficultySelection());
-        this.testPlayerLeftBtn.addEventListener('click', () => this.testPlayerLeft());
         
         // Modal events
         this.modalConfirm.addEventListener('click', () => this.executeConfirmedAction());
@@ -461,6 +460,7 @@ class TicTacToeMultiplayerClient {
         this.gameState = null;
         this.matchmakingPlayerId = null;
         this.pendingAction = null;
+        this.playerLeftNotified = false; // Reset notification flag
         
         // Clear form inputs
         this.createPlayerNameInput.value = '';
@@ -881,49 +881,6 @@ class TicTacToeMultiplayerClient {
     //         }
     //     }
 
-    async testPlayerLeft() {
-        console.log('=== TESTING PLAYER LEFT SCREEN ===');
-        
-        // 檢查是否在多人遊戲中
-        if (!this.gameState || !this.gameId) {
-            this.showError('No active game to test. Please join a multiplayer game first.');
-            return;
-        }
-
-        if (this.gameState.isAI) {
-            this.showError('Cannot test player left in AI games. Please join a multiplayer game first.');
-            return;
-        }
-
-        console.log('Current game state before test:', this.gameState);
-        
-        try {
-            // 調用伺服器的測試暫停端點
-            console.log('Calling test-pause endpoint...');
-            const response = await this.apiCall(`/game/${this.gameId}/test-pause`, {
-                method: 'POST',
-                body: JSON.stringify({ playerId: this.playerId })
-            });
-            
-            console.log('Test pause response:', response);
-            
-            // 更新遊戲狀態
-            this.gameState = response;
-            console.log('Updated game state:', this.gameState);
-            
-            // 直接調用 checkForPlayerLeft 來測試
-            console.log('Directly calling checkForPlayerLeft...');
-            this.checkForPlayerLeft();
-            
-            this.showSuccess('Player left test triggered! Check if the notification appears.');
-            
-        } catch (error) {
-            console.error('Failed to test player left:', error);
-            this.showError('Failed to test player left: ' + error.message);
-        }
-        
-        console.log('=== TEST COMPLETED ===');
-    }
 
     initializeGuessingGame() {
         // Generate a random number between 1 and 100
@@ -1361,7 +1318,21 @@ class TicTacToeMultiplayerClient {
         });
     }
 
-    leaveGame() {
+    async leaveGame() {
+        // Notify server that player is leaving
+        if (this.gameId && this.playerId) {
+            try {
+                await this.apiCall(`/game/${this.gameId}/disconnect`, {
+                    method: 'POST',
+                    body: JSON.stringify({ playerId: this.playerId })
+                });
+                console.log('Successfully notified server of player disconnect');
+            } catch (error) {
+                console.error('Failed to notify server of disconnect:', error);
+                // Continue with leaving even if notification fails
+            }
+        }
+        
         // Stop polling to prevent further API calls
         this.stopPolling();
         this.stopMatchmakingPolling();
@@ -1375,10 +1346,23 @@ class TicTacToeMultiplayerClient {
     }
 
     async refreshGameState() {
-        if (!this.gameId || !this.playerId) return;
+        if (!this.gameId || !this.playerId) {
+            console.log('refreshGameState: No gameId or playerId');
+            return;
+        }
+
+        console.log('refreshGameState: Polling game state...', {
+            gameId: this.gameId,
+            playerId: this.playerId
+        });
 
         try {
             this.gameState = await this.apiCall(`/game/${this.gameId}/player/${this.playerId}`);
+            console.log('refreshGameState: Game state updated:', {
+                gameStatus: this.gameState.gameStatus,
+                pausedBy: this.gameState.pausedBy,
+                isAI: this.gameState.isAI
+            });
             this.updateUI();
         } catch (error) {
             console.error('Failed to refresh game state:', error);
@@ -1409,6 +1393,13 @@ class TicTacToeMultiplayerClient {
 
     updateUI() {
         if (!this.gameState) return;
+        
+        console.log('updateUI: Updating UI with game state:', {
+            gameStatus: this.gameState.gameStatus,
+            pausedBy: this.gameState.pausedBy,
+            playerCount: this.gameState.playerCount,
+            isAI: this.gameState.isAI
+        });
         
         this.updatePlayerInfo();
         this.updatePlayersList();
@@ -1485,7 +1476,7 @@ class TicTacToeMultiplayerClient {
             // Clear previous classes
             cell.classList.remove('x', 'o', 'disabled', 'winning');
             
-            if (this.gameState.board[index]) {
+            if (this.gameState.board && this.gameState.board[index]) {
                 const value = this.gameState.board[index];
                 cell.textContent = value;
                 cell.classList.add(value.toLowerCase());
@@ -1498,7 +1489,7 @@ class TicTacToeMultiplayerClient {
                                 this.gameState.gameStatus !== 'playing' || 
                                 this.gameState.gameStatus === 'paused' ||
                                 !this.gameState.yourTurn ||
-                                this.gameState.board[index] !== null;
+                                (this.gameState.board && this.gameState.board[index] !== null);
             
             if (shouldDisable) {
                 cell.classList.add('disabled');
@@ -1612,7 +1603,10 @@ class TicTacToeMultiplayerClient {
         // Use faster polling for all games to catch player disconnections quickly
         const pollInterval = this.gameState && this.gameState.isAI ? 500 : 1000;
         
+        console.log('startPolling: Starting polling with interval:', pollInterval);
+        
         this.pollInterval = setInterval(() => {
+            console.log('Polling: Checking for game state updates...');
             this.refreshGameState();
         }, pollInterval);
     }
@@ -1823,10 +1817,9 @@ class TicTacToeMultiplayerClient {
             <div class="player-left-content">
                 <div class="player-left-icon">🚪</div>
                 <h2>⚠️ Player Left the Game</h2>
-                <p>Your opponent has disconnected from the game.<br>The game is now paused and waiting for them to return.</p>
+                <p>Your opponent has disconnected from the game.<br>You will be returned to the lobby.</p>
                 <div class="player-left-buttons">
-                    <button class="btn btn-primary" id="wait-for-player-btn">⏳ Wait for Return</button>
-                    <button class="btn btn-secondary" id="leave-game-btn">🚪 Leave Game</button>
+                    <button class="btn btn-primary" id="return-to-lobby-btn">🏠 Return to Lobby</button>
                 </div>
             </div>
         `;
@@ -1860,17 +1853,18 @@ class TicTacToeMultiplayerClient {
         document.body.appendChild(screen);
 
         // Add event listeners
-        document.getElementById('wait-for-player-btn').addEventListener('click', () => {
-            screen.remove();
-            this.showMessage('⏳ Waiting for opponent to return...', 'info');
-        });
-
-        document.getElementById('leave-game-btn').addEventListener('click', () => {
+        document.getElementById('return-to-lobby-btn').addEventListener('click', () => {
             this.leaveGame();
             screen.remove();
         });
 
-        // Don't auto-remove this screen - player must make a choice
+        // Auto-return to lobby after 5 seconds
+        setTimeout(() => {
+            if (screen.parentNode) {
+                this.leaveGame();
+                screen.remove();
+            }
+        }, 5000);
     }
 
     hidePlayerLeftScreen() {
@@ -1900,13 +1894,13 @@ class TicTacToeMultiplayerClient {
             return;
         }
         
-        // Debug logging for all game states
+        // Debug logging for all game states - with safe property access
         console.log('checkForPlayerLeft: Checking game state:', {
-            gameStatus: this.gameState.gameStatus,
-            pausedBy: this.gameState.pausedBy,
-            playerCount: this.gameState.playerCount,
-            isAI: this.gameState.isAI,
-            isMatchmaking: this.gameState.isMatchmaking
+            gameStatus: this.gameState.gameStatus || 'unknown',
+            pausedBy: this.gameState.pausedBy || null,
+            playerCount: this.gameState.playerCount || 0,
+            isAI: this.gameState.isAI || false,
+            isMatchmaking: this.gameState.isMatchmaking || false
         });
         
         // Check if game is paused due to player leaving
@@ -1917,6 +1911,15 @@ class TicTacToeMultiplayerClient {
                 playerCount: this.gameState.playerCount
             });
             
+            // Prevent duplicate notifications - check if we already notified for this specific pause
+            const pauseKey = `${this.gameId}-${this.gameState.pausedBy}`;
+            if (this.playerLeftNotified === pauseKey) {
+                console.log('checkForPlayerLeft: Already notified about this specific player leaving');
+                return;
+            }
+            
+            this.playerLeftNotified = pauseKey;
+            
             // Show immediate notification first
             this.showError('⚠️ Your opponent has left the game!');
             
@@ -1926,11 +1929,7 @@ class TicTacToeMultiplayerClient {
             }, 1000);
         }
         
-        // Check if game resumed (player returned)
-        if (this.gameState.gameStatus === 'playing' && this.gameState.pausedBy === null) {
-            console.log('checkForPlayerLeft: Game resumed, hiding player left screen');
-            this.hidePlayerLeftScreen();
-        }
+        // No need to check for game resumption since we return to lobby when player leaves
     }
 }
 
@@ -1944,13 +1943,13 @@ class TicTacToeMultiplayerClient {
         if (window.gameClient && window.gameClient.gameId && window.gameClient.playerId) {
             // Use sendBeacon for reliability
             const success = navigator.sendBeacon(
-                `${window.gameClient.API_BASE_URL}/api/game/${window.gameClient.gameId}/disconnect`,
+                `${window.gameClient.API_BASE_URL}/game/${window.gameClient.gameId}/disconnect`,
                 JSON.stringify({ playerId: window.gameClient.playerId })
             );
             
             if (!success) {
                 // Fallback to fetch if sendBeacon fails
-                fetch(`${window.gameClient.API_BASE_URL}/api/game/${window.gameClient.gameId}/disconnect`, {
+                fetch(`${window.gameClient.API_BASE_URL}/game/${window.gameClient.gameId}/disconnect`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ playerId: window.gameClient.playerId })
