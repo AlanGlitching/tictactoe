@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Player Left Notification</title>
+</head>
+<body>
+    <h1>Debug Player Left Notification</h1>
+    <button onclick="testPlayerLeft()">Test Player Left</button>
+    <button onclick="checkGameState()">Check Game State</button>
+    <div id="output"></div>
+
+    <script>
+        let gameClient = null;
+        
+        // Initialize game client
+        fetch('/app.js')
+            .then(response => response.text())
+            .then(code => {
+                eval(code);
+                gameClient = window.gameClient;
+                console.log('Game client initialized:', gameClient);
+            });
+
+        function testPlayerLeft() {
+            if (!gameClient) {
+                document.getElementById('output').innerHTML = 'Game client not initialized';
+                return;
+            }
+            
+            console.log('Testing player left...');
+            gameClient.testPlayerLeft();
+        }
+
+        function checkGameState() {
+            if (!gameClient) {
+                document.getElementById('output').innerHTML = 'Game client not initialized';
+                return;
+            }
+            
+            console.log('Current game state:', gameClient.gameState);
+            document.getElementById('output').innerHTML = JSON.stringify(gameClient.gameState, null, 2);
+        }
+    </script>
+</body>
+</html>

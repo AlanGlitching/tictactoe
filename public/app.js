@@ -19,7 +19,7 @@ class TicTacToeMultiplayerClient {
         this.selectedTheme = 'animals';
         
         // API configuration
-        this.API_BASE_URL = 'https://tictactoe-production-6807.up.railway.app';
+        this.API_BASE_URL = 'http://localhost:3000/api';
         
         this.initializeElements();
         this.attachEventListeners();
@@ -450,10 +450,19 @@ class TicTacToeMultiplayerClient {
     }
 
     clearGameData() {
+        // Stop all polling
+        this.stopPolling();
+        this.stopMatchmakingPolling();
+        
+        // Clear game state
         this.gameId = null;
         this.playerId = null;
         this.playerName = null;
         this.gameState = null;
+        this.matchmakingPlayerId = null;
+        this.pendingAction = null;
+        
+        // Clear form inputs
         this.createPlayerNameInput.value = '';
         this.joinPlayerNameInput.value = '';
         this.joinGameIdInput.value = '';
@@ -469,10 +478,20 @@ class TicTacToeMultiplayerClient {
             feedback.classList.remove('success', 'error');
         });
         
+        // Reset buttons
         this.createGameBtn.disabled = true;
         this.joinGameBtn.disabled = true;
         // Don't disable AI button as it should be controlled by validation
         // this.startAiGameBtn.disabled = true;
+        
+        // Hide any modals
+        this.hideModal();
+        
+        // Clear any player left screens
+        const existingScreen = document.getElementById('player-left-screen');
+        if (existingScreen) {
+            existingScreen.remove();
+        }
     }
 
     selectDifficulty(btn) {
@@ -562,6 +581,10 @@ class TicTacToeMultiplayerClient {
 
         try {
             console.log('Starting AI game...');
+            
+            // Clear any existing game state first
+            this.clearGameData();
+            
             this.startAiGameBtn.disabled = true;
             this.startAiGameBtn.textContent = 'Starting...';
 
@@ -858,55 +881,48 @@ class TicTacToeMultiplayerClient {
     //         }
     //     }
 
-    testPlayerLeft() {
+    async testPlayerLeft() {
         console.log('=== TESTING PLAYER LEFT SCREEN ===');
         
-        // 模擬玩家離開的狀態
-        if (!this.gameState) {
-            this.showError('No game state to test');
+        // 檢查是否在多人遊戲中
+        if (!this.gameState || !this.gameId) {
+            this.showError('No active game to test. Please join a multiplayer game first.');
             return;
         }
 
-        console.log('Current game state:', this.gameState);
+        if (this.gameState.isAI) {
+            this.showError('Cannot test player left in AI games. Please join a multiplayer game first.');
+            return;
+        }
+
+        console.log('Current game state before test:', this.gameState);
         
-        // 直接調用showPlayerLeftScreen來測試
-        console.log('Directly calling showPlayerLeftScreen...');
-        this.showPlayerLeftScreen();
-        
-        // 檢查彈出視窗是否被創建
-        const screen = document.getElementById('player-left-screen');
-        if (screen) {
-            console.log('Player left screen created successfully!');
-            console.log('Screen element:', screen);
-            console.log('Screen HTML:', screen.innerHTML);
-            console.log('Screen classes:', screen.className);
-            console.log('Screen computed styles:', window.getComputedStyle(screen));
+        try {
+            // 調用伺服器的測試暫停端點
+            console.log('Calling test-pause endpoint...');
+            const response = await this.apiCall(`/game/${this.gameId}/test-pause`, {
+                method: 'POST',
+                body: JSON.stringify({ playerId: this.playerId })
+            });
             
-            // 檢查按鈕是否存在
-            const waitBtn = document.getElementById('wait-for-player-btn');
-            const leaveBtn = document.getElementById('leave-game-btn');
-            console.log('Wait button:', waitBtn);
-            console.log('Leave button:', leaveBtn);
+            console.log('Test pause response:', response);
             
-            // 檢查內容結構
-            const content = screen.querySelector('.player-left-content');
-            const icon = screen.querySelector('.player-left-icon');
-            const title = screen.querySelector('h2');
-            const description = screen.querySelector('p');
-            const buttons = screen.querySelector('.player-left-buttons');
+            // 更新遊戲狀態
+            this.gameState = response;
+            console.log('Updated game state:', this.gameState);
             
-            console.log('Content div:', content);
-            console.log('Icon:', icon);
-            console.log('Title:', title);
-            console.log('Description:', description);
-            console.log('Buttons container:', buttons);
-        } else {
-            console.error('Player left screen was not created!');
+            // 直接調用 checkForPlayerLeft 來測試
+            console.log('Directly calling checkForPlayerLeft...');
+            this.checkForPlayerLeft();
+            
+            this.showSuccess('Player left test triggered! Check if the notification appears.');
+            
+        } catch (error) {
+            console.error('Failed to test player left:', error);
+            this.showError('Failed to test player left: ' + error.message);
         }
         
         console.log('=== TEST COMPLETED ===');
-        
-        this.showSuccess('Player left screen should now be visible!');
     }
 
     initializeGuessingGame() {
@@ -1346,6 +1362,14 @@ class TicTacToeMultiplayerClient {
     }
 
     leaveGame() {
+        // Stop polling to prevent further API calls
+        this.stopPolling();
+        this.stopMatchmakingPolling();
+        
+        // Clear all game data
+        this.clearGameData();
+        
+        // Show welcome screen
         this.showWelcomeScreen();
         this.showSuccess('Left the game');
     }
@@ -1585,8 +1609,8 @@ class TicTacToeMultiplayerClient {
     startPolling() {
         this.stopPolling();
         
-        // Use faster polling for AI games to catch delayed moves
-        const pollInterval = this.gameState && this.gameState.isAI ? 500 : 2000;
+        // Use faster polling for all games to catch player disconnections quickly
+        const pollInterval = this.gameState && this.gameState.isAI ? 500 : 1000;
         
         this.pollInterval = setInterval(() => {
             this.refreshGameState();
@@ -1798,13 +1822,39 @@ class TicTacToeMultiplayerClient {
         screen.innerHTML = `
             <div class="player-left-content">
                 <div class="player-left-icon">🚪</div>
-                <h2>Player Left the Game</h2>
-                <p>Your opponent has disconnected from the game.<br>The game is now paused.</p>
+                <h2>⚠️ Player Left the Game</h2>
+                <p>Your opponent has disconnected from the game.<br>The game is now paused and waiting for them to return.</p>
                 <div class="player-left-buttons">
-                    <button class="btn btn-primary" id="wait-for-player-btn">Wait for Return</button>
-                    <button class="btn btn-secondary" id="leave-game-btn">Leave Game</button>
+                    <button class="btn btn-primary" id="wait-for-player-btn">⏳ Wait for Return</button>
+                    <button class="btn btn-secondary" id="leave-game-btn">🚪 Leave Game</button>
                 </div>
             </div>
+        `;
+
+        // Add CSS styles for the screen
+        screen.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease-in;
+        `;
+
+        const content = screen.querySelector('.player-left-content');
+        content.style.cssText = `
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
         `;
 
         document.body.appendChild(screen);
@@ -1812,7 +1862,7 @@ class TicTacToeMultiplayerClient {
         // Add event listeners
         document.getElementById('wait-for-player-btn').addEventListener('click', () => {
             screen.remove();
-            this.showMessage('Waiting for opponent to return...', 'info');
+            this.showMessage('⏳ Waiting for opponent to return...', 'info');
         });
 
         document.getElementById('leave-game-btn').addEventListener('click', () => {
@@ -1833,13 +1883,25 @@ class TicTacToeMultiplayerClient {
 
     checkForPlayerLeft() {
         // Only check if we're in a game and not already showing the screen
-        if (!this.gameState || !this.gameId) return;
+        if (!this.gameState || !this.gameId) {
+            console.log('checkForPlayerLeft: No game state or game ID');
+            return;
+        }
         
         const existingScreen = document.getElementById('player-left-screen');
-        if (existingScreen) return; // Already showing the screen
+        if (existingScreen) {
+            console.log('checkForPlayerLeft: Screen already exists');
+            return; // Already showing the screen
+        }
+        
+        // Skip check for AI games
+        if (this.gameState.isAI) {
+            console.log('checkForPlayerLeft: Skipping AI game');
+            return;
+        }
         
         // Debug logging for all game states
-        console.log('Checking for player left:', {
+        console.log('checkForPlayerLeft: Checking game state:', {
             gameStatus: this.gameState.gameStatus,
             pausedBy: this.gameState.pausedBy,
             playerCount: this.gameState.playerCount,
@@ -1849,19 +1911,24 @@ class TicTacToeMultiplayerClient {
         
         // Check if game is paused due to player leaving
         if (this.gameState.gameStatus === 'paused' && this.gameState.pausedBy) {
-            console.log('Player left detected:', {
+            console.log('checkForPlayerLeft: Player left detected!', {
                 gameStatus: this.gameState.gameStatus,
                 pausedBy: this.gameState.pausedBy,
                 playerCount: this.gameState.playerCount
             });
             
-            // Show the player left screen
-            this.showPlayerLeftScreen();
+            // Show immediate notification first
+            this.showError('⚠️ Your opponent has left the game!');
+            
+            // Then show the player left screen
+            setTimeout(() => {
+                this.showPlayerLeftScreen();
+            }, 1000);
         }
         
         // Check if game resumed (player returned)
         if (this.gameState.gameStatus === 'playing' && this.gameState.pausedBy === null) {
-            console.log('Game resumed, hiding player left screen');
+            console.log('checkForPlayerLeft: Game resumed, hiding player left screen');
             this.hidePlayerLeftScreen();
         }
     }
