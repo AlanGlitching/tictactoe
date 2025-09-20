@@ -27,8 +27,12 @@ class TicTacToeMultiplayerClient {
         
         this.initializeElements();
         this.attachEventListeners();
-        this.testConnection();
         this.showWelcomeScreen();
+        
+        // Test connection in background without showing errors
+        this.testConnection().catch(() => {
+            // Silently fail - errors will be shown when user actually tries to use the app
+        });
     }
 
     initializeElements() {
@@ -736,7 +740,6 @@ class TicTacToeMultiplayerClient {
             });
             
             console.log('Health check response status:', response.status);
-            console.log('Health check response headers:', response.headers);
             
             if (response.ok) {
                 const data = await response.json();
@@ -750,14 +753,6 @@ class TicTacToeMultiplayerClient {
             }
         } catch (error) {
             console.error('Server connection test failed:', error);
-            console.error('Error details:', {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-            });
-            
-            // Don't show error immediately, just log it
-            // The error will be shown when actual API calls fail
             this.serverAvailable = false;
             return false;
         }
@@ -809,27 +804,33 @@ class TicTacToeMultiplayerClient {
                 retryCount: retryCount
             });
             
-            // Retry logic for network errors
+            // Retry logic for network errors (only for actual API calls, not connection tests)
             if (retryCount < this.API_RETRY_ATTEMPTS && 
-                (error.name === 'TypeError' || error.message.includes('Failed to fetch'))) {
+                (error.name === 'TypeError' || error.message.includes('Failed to fetch')) &&
+                !endpoint.includes('/health')) {
                 console.log(`Retrying API call in ${this.API_RETRY_DELAY}ms...`);
                 await new Promise(resolve => setTimeout(resolve, this.API_RETRY_DELAY));
                 return this.apiCall(endpoint, options, retryCount + 1);
             }
             
-            // More specific error messages
-            if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                console.error('Network error - server may be down or unreachable');
-                this.showError('無法連接到伺服器。請確保伺服器正在運行 (npm start) 並檢查網路連接。');
-            } else if (error.message.includes('Failed to fetch')) {
-                console.error('Fetch failed - possible CORS or network issue');
-                this.showError('網路連接失敗。請檢查瀏覽器控制台獲取詳細錯誤信息。');
-            } else if (error.message.includes('CORS')) {
-                console.error('CORS error detected');
-                this.showError('跨域請求被阻止。請檢查伺服器 CORS 配置。');
+            // Only show error messages after all retries are exhausted
+            if (retryCount >= this.API_RETRY_ATTEMPTS) {
+                console.log(`Showing error after ${retryCount} retries for endpoint: ${endpoint}`);
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    console.error('Network error - server may be down or unreachable');
+                    this.showError('無法連接到伺服器。請確保伺服器正在運行 (npm start) 並檢查網路連接。');
+                } else if (error.message.includes('Failed to fetch')) {
+                    console.error('Fetch failed - possible CORS or network issue');
+                    this.showError('網路連接失敗。請檢查瀏覽器控制台獲取詳細錯誤信息。');
+                } else if (error.message.includes('CORS')) {
+                    console.error('CORS error detected');
+                    this.showError('跨域請求被阻止。請檢查伺服器 CORS 配置。');
+                } else {
+                    console.error('API error:', error.message);
+                    this.showError(`API 錯誤: ${error.message}`);
+                }
             } else {
-                console.error('API error:', error.message);
-                this.showError(`API 錯誤: ${error.message}`);
+                console.log(`Not showing error yet, retry ${retryCount}/${this.API_RETRY_ATTEMPTS} for endpoint: ${endpoint}`);
             }
             throw error;
         }
