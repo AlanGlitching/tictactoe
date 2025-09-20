@@ -1101,14 +1101,14 @@ class TicTacToeMultiplayerClient {
             // Mahjong tiles symbols
             allSymbols = ['🀄', '🀅', '🀆', '🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏', '🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘', '🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡', '🀢', '🀣', '🀤', '🀥', '🀦', '🀧', '🀨', '🀩', '🀪', '🀫'];
         } else if (this.selectedTheme === 'poker') {
-            // Poker/Playing cards symbols
-            allSymbols = ['🂡', '🂢', '🂣', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂬', '🂭', '🂮', '🂯', '🂰', '🂱', '🂲', '🂳', '🂴', '🂵', '🂶', '🂷', '🂸', '🂹', '🂺', '🂻', '🂼', '🂽', '🂾', '🂿', '🃀', '🃁', '🃂', '🃃', '🃄', '🃅', '🃆', '🃇', '🃈', '🃉', '🃊', '🃋', '🃌', '🃍', '🃎', '🃏'];
+            // Poker/Playing cards symbols - using clearer, more readable symbols
+            allSymbols = ['A♠', '2♠', '3♠', '4♠', '5♠', '6♠', '7♠', '8♠', '9♠', '10♠', 'J♠', 'Q♠', 'K♠', 'A♥', '2♥', '3♥', '4♥', '5♥', '6♥', '7♥', '8♥', '9♥', '10♥', 'J♥', 'Q♥', 'K♥', 'A♦', '2♦', '3♦', '4♦', '5♦', '6♦', '7♦', '8♦', '9♦', '10♦', 'J♦', 'Q♦', 'K♦', 'A♣', '2♣', '3♣', '4♣', '5♣', '6♣', '7♣', '8♣', '9♣', '10♣', 'J♣', 'Q♣', 'K♣'];
         } else if (this.selectedTheme === 'combined') {
             // Combined theme - mix of different symbols
             allSymbols = ['🐶', '🐱', '🀄', '🀅', '🂡', '🂢', '🎲', '🎯', '⭐', '🌟', '💎', '🔮', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪'];
         } else {
-            // Animal emojis (default) - use simple text for testing
-            allSymbols = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮'];
+            // Animal emojis (default) - comprehensive collection
+            allSymbols = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷', '🕸', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅', '🐆', '🦓', '🦍', '🐘', '🦏', '🦛', '🐪', '🐫', '🦒', '🦘', '🐃', '🐂', '🐄', '🐎', '🐖', '🐏', '🐑', '🦙', '🐐', '🦌', '🐕', '🐩', '🦮', '🐕‍🦺', '🐈', '🐓', '🦃', '🦚', '🦜', '🦢', '🦩', '🕊', '🐇', '🦝', '🦨', '🦡', '🦦', '🦥', '🐁', '🐀', '🐿', '🦔'];
         }
         
         console.log('All symbols array length:', allSymbols.length);
@@ -1177,6 +1177,8 @@ class TicTacToeMultiplayerClient {
         
         // Set grid columns based on selected size
         this.memoryBoard.style.gridTemplateColumns = `repeat(${this.selectedMemorySize}, 1fr)`;
+        console.log('Setting grid columns to:', this.selectedMemorySize);
+        console.log('Grid template columns:', this.memoryBoard.style.gridTemplateColumns);
         
         if (!this.memoryCards || this.memoryCards.length === 0) {
             console.error('No memory cards to render!');
@@ -1214,6 +1216,8 @@ class TicTacToeMultiplayerClient {
             console.log(`Card ${index} symbol: "${card.symbol}"`);
             console.log(`Card ${index} theme: "${this.selectedTheme}"`);
             console.log(`Card element classes:`, cardElement.className);
+            console.log(`Card element dataset:`, cardElement.dataset);
+            console.log(`Card element attributes:`, cardElement.attributes);
             
             cardElement.innerHTML = cardHTML;
             

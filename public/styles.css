@@ -1233,7 +1233,7 @@ footer {
 .memory-card[data-theme="animals"] .card-back {
     background: linear-gradient(135deg, #2E7D32, #388E3C);
     color: #FFFFFF;
-    font-size: 2.5rem;
+    font-size: 2.8rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
     border: none;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -1241,12 +1241,14 @@ footer {
     align-items: center;
     justify-content: center;
     border-radius: 16px;
+    font-weight: 900;
+    letter-spacing: 1px;
 }
 
 .memory-card[data-theme="animals"] .card-front {
     background: linear-gradient(135deg, #81C784, #A5D6A7);
     color: #1B5E20;
-    font-size: 2.5rem;
+    font-size: 2.8rem;
     text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
     border: none;
     display: flex;
@@ -1254,38 +1256,45 @@ footer {
     justify-content: center;
     border-radius: 16px;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-weight: 900;
+    letter-spacing: 1px;
 }
 
 .memory-card[data-theme="animals"]:hover .card-front {
     background: linear-gradient(135deg, #A5D6A7, #C8E6C9);
     transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 /* Poker Theme Specific Card Styles */
 .memory-card[data-theme="poker"] .card-back {
     background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
     color: #FFD700;
-    font-size: 2.5rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    font-size: 2.8rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
     border: none;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
     display: none;
     align-items: center;
     justify-content: center;
     border-radius: 16px;
+    font-weight: 900;
+    letter-spacing: 1px;
 }
 
 .memory-card[data-theme="poker"] .card-front {
     background: linear-gradient(135deg, #8B0000, #DC143C);
     color: #FFD700;
-    font-size: 2.5rem;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    font-size: 2.8rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 16px;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-weight: 900;
+    letter-spacing: 1px;
 }
 
 .memory-card[data-theme="poker"]:hover .card-front {
@@ -1613,6 +1622,37 @@ footer {
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
 }
 
+/* Default Card Styles - fallback styling */
+.card-front {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-size: 2.5rem;
+    border: none;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    font-weight: 900;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.card-back {
+    background: linear-gradient(135deg, #4CAF50, #66BB6A);
+    color: white;
+    font-size: 2.5rem;
+    border: none;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .memory-card.flipped .card-inner {
     /* Transform removed - using display properties instead */
 }
@@ -1637,37 +1677,7 @@ footer {
     border-color: #388E3C !important;
 }
 
-/* Enhanced Card Front for Better Visibility */
-.card-front {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    font-size: 2.5rem;
-    border: none;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    font-weight: 900;
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 16px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-}
 
-/* Enhanced Card Back for Better Visibility */
-.card-back {
-    background: linear-gradient(135deg, #4CAF50, #66BB6A);
-    color: white;
-    font-size: 2.5rem;
-    border: none;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
-    font-weight: 900;
-    letter-spacing: 0.5px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    border-radius: 16px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-}
 
 .card-inner {
     position: relative;
@@ -1683,7 +1693,6 @@ footer {
     position: absolute;
     width: 100%;
     height: 100%;
-    display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 12px;
@@ -1710,7 +1719,6 @@ footer {
 /* Responsive design for memory game */
 @media (max-width: 600px) {
     .memory-board {
-        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
     }
     
@@ -1752,17 +1760,29 @@ footer {
     }
     
     .memory-card[data-theme="mahjong"] .card-back,
-    .memory-card[data-theme="animals"] .card-back,
-    .memory-card[data-theme="poker"] .card-back,
     .memory-card[data-theme="combined"] .card-back {
         font-size: 1.8rem;
     }
     
+    .memory-card[data-theme="animals"] .card-back {
+        font-size: 2.2rem;
+    }
+    
+    .memory-card[data-theme="poker"] .card-back {
+        font-size: 2.2rem;
+    }
+    
     .memory-card[data-theme="mahjong"] .card-front,
-    .memory-card[data-theme="animals"] .card-front,
-    .memory-card[data-theme="poker"] .card-front,
     .memory-card[data-theme="combined"] .card-front {
         font-size: 2rem;
+    }
+    
+    .memory-card[data-theme="animals"] .card-front {
+        font-size: 2.2rem;
+    }
+    
+    .memory-card[data-theme="poker"] .card-front {
+        font-size: 2.2rem;
     }
     
     .card-front {
@@ -1791,16 +1811,28 @@ footer {
     }
     
     .memory-card[data-theme="mahjong"] .card-back,
-    .memory-card[data-theme="animals"] .card-back,
-    .memory-card[data-theme="poker"] .card-back,
     .memory-card[data-theme="combined"] .card-back {
         font-size: 1.6rem;
     }
     
+    .memory-card[data-theme="animals"] .card-back {
+        font-size: 1.8rem;
+    }
+    
+    .memory-card[data-theme="poker"] .card-back {
+        font-size: 1.8rem;
+    }
+    
     .memory-card[data-theme="mahjong"] .card-front,
-    .memory-card[data-theme="animals"] .card-front,
-    .memory-card[data-theme="poker"] .card-front,
     .memory-card[data-theme="combined"] .card-front {
+        font-size: 1.8rem;
+    }
+    
+    .memory-card[data-theme="animals"] .card-front {
+        font-size: 1.8rem;
+    }
+    
+    .memory-card[data-theme="poker"] .card-front {
         font-size: 1.8rem;
     }
     
@@ -1833,15 +1865,4 @@ footer {
         text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.9);
     }
     
-    .memory-card[data-theme="mahjong"] .card-back {
-        background: #8B4513;
-        color: #FFFFFF;
-        border: 3px solid #000000;
-    }
-    
-    .memory-card[data-theme="animals"] .card-back {
-        background: #2E7D32;
-        color: #FFFFFF;
-        border: 3px solid #000000;
-    }
 } 
