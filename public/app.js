@@ -21,9 +21,12 @@ class TicTacToeMultiplayerClient {
         
         // API configuration
         this.API_BASE_URL = 'http://localhost:3000/api';
+        this.API_RETRY_ATTEMPTS = 3;
+        this.API_RETRY_DELAY = 1000; // 1 second
         
         this.initializeElements();
         this.attachEventListeners();
+        this.testConnection();
         this.showWelcomeScreen();
     }
 
@@ -712,8 +715,27 @@ class TicTacToeMultiplayerClient {
         }
     }
 
-    async apiCall(endpoint, options = {}) {
+    async testConnection() {
         try {
+            console.log('Testing connection to server...');
+            const response = await fetch(`${this.API_BASE_URL.replace('/api', '')}/health`);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Server connection test successful:', data);
+            } else {
+                console.warn('Server health check failed:', response.status);
+            }
+        } catch (error) {
+            console.error('Server connection test failed:', error);
+            this.showError('無法連接到遊戲伺服器。請確保伺服器正在運行。');
+        }
+    }
+
+    async apiCall(endpoint, options = {}, retryCount = 0) {
+        try {
+            console.log(`Making API call to: ${this.API_BASE_URL}${endpoint} (attempt ${retryCount + 1})`);
+            console.log('Options:', options);
+            
             const response = await fetch(`${this.API_BASE_URL}${endpoint}`, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -721,16 +743,50 @@ class TicTacToeMultiplayerClient {
                 ...options
             });
 
-            const data = await response.json();
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
             
             if (!response.ok) {
-                throw new Error(data.error || 'API request failed');
+                const errorText = await response.text();
+                console.error('API Error Response:', errorText);
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch (e) {
+                    errorData = { error: errorText };
+                }
+                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
             }
             
+            const data = await response.json();
+            console.log('API Response data:', data);
             return data;
         } catch (error) {
-            console.error('API Error:', error);
-            this.showError(error.message);
+            console.error('API Error Details:', {
+                message: error.message,
+                name: error.name,
+                stack: error.stack,
+                endpoint: `${this.API_BASE_URL}${endpoint}`,
+                options: options,
+                retryCount: retryCount
+            });
+            
+            // Retry logic for network errors
+            if (retryCount < this.API_RETRY_ATTEMPTS && 
+                (error.name === 'TypeError' || error.message.includes('Failed to fetch'))) {
+                console.log(`Retrying API call in ${this.API_RETRY_DELAY}ms...`);
+                await new Promise(resolve => setTimeout(resolve, this.API_RETRY_DELAY));
+                return this.apiCall(endpoint, options, retryCount + 1);
+            }
+            
+            // More specific error messages
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                this.showError('無法連接到伺服器。請檢查網路連接或稍後再試。');
+            } else if (error.message.includes('Failed to fetch')) {
+                this.showError('網路連接失敗。請檢查網路連接或重新整理頁面。');
+            } else {
+                this.showError(`API 錯誤: ${error.message}`);
+            }
             throw error;
         }
     }
@@ -824,15 +880,25 @@ class TicTacToeMultiplayerClient {
             return;
         }
 
+        // Disable the cell temporarily to prevent double-clicks
+        const cell = this.cells[position];
+        cell.style.pointerEvents = 'none';
+        cell.style.opacity = '0.7';
+
         try {
+            console.log(`Making move: position ${position}, player ${this.playerId}`);
             this.gameState = await this.apiCall(`/game/${this.gameId}/move`, {
                 method: 'POST',
                 body: JSON.stringify({ position, playerId: this.playerId })
             });
             
+            console.log('Move successful, updating UI...');
             this.updateUI();
         } catch (error) {
             console.error('Failed to make move:', error);
+            // Re-enable the cell if the move failed
+            cell.style.pointerEvents = 'auto';
+            cell.style.opacity = '1';
         }
     }
 

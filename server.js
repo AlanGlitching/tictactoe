@@ -646,49 +646,66 @@ app.get('/api/game/:gameId', (req, res) => {
 
 // Make a move
 app.post('/api/game/:gameId/move', (req, res) => {
-  const { gameId } = req.params;
-  const { position, playerId } = req.body;
-  const game = games.get(gameId);
-  
-  if (!game) {
-    return res.status(404).json({ error: 'Game not found' });
-  }
-  
-  if (!playerId) {
-    return res.status(400).json({ error: 'Player ID is required' });
-  }
-  
-  if (position < 0 || position > 8 || !Number.isInteger(position)) {
-    return res.status(400).json({ error: 'Invalid position' });
-  }
-  
-  const result = game.makeMove(position, playerId);
-  
-  if (!result.success) {
-    return res.status(400).json({ error: result.error });
-  }
-
-  // If it's an AI game and it's now AI's turn, make AI move with a delay
-  if (game.isAI && game.currentPlayer === 'O' && game.gameStatus === 'playing') {
-    // For AI games, we'll delay the actual move but send response immediately
-    // The client will poll for updates to see the AI move
-    console.log('AI will move in 1.5 seconds...');
+  try {
+    const { gameId } = req.params;
+    const { position, playerId } = req.body;
     
-    setTimeout(() => {
-      const aiMoveResult = game.makeAIMove();
-      if (!aiMoveResult.success) {
-        console.error('AI move failed:', aiMoveResult.error);
-      } else {
-        console.log('AI move completed:', aiMoveResult);
-      }
-    }, 1500); // 1.5 second delay
+    console.log(`Move request: gameId=${gameId}, position=${position}, playerId=${playerId}`);
+    
+    const game = games.get(gameId);
+    
+    if (!game) {
+      console.log(`Game ${gameId} not found`);
+      return res.status(404).json({ error: 'Game not found' });
+    }
+    
+    if (!playerId) {
+      console.log('Player ID is missing');
+      return res.status(400).json({ error: 'Player ID is required' });
+    }
+    
+    if (position < 0 || position > 8 || !Number.isInteger(position)) {
+      console.log(`Invalid position: ${position}`);
+      return res.status(400).json({ error: 'Invalid position' });
+    }
+    
+    const result = game.makeMove(position, playerId);
+    
+    if (!result.success) {
+      console.log(`Move failed: ${result.error}`);
+      return res.status(400).json({ error: result.error });
+    }
+
+    console.log(`Move successful for player ${playerId} at position ${position}`);
+
+    // If it's an AI game and it's now AI's turn, make AI move with a delay
+    if (game.isAI && game.currentPlayer === 'O' && game.gameStatus === 'playing') {
+      // For AI games, we'll delay the actual move but send response immediately
+      // The client will poll for updates to see the AI move
+      console.log('AI will move in 1.5 seconds...');
+      
+      setTimeout(() => {
+        const aiMoveResult = game.makeAIMove();
+        if (!aiMoveResult.success) {
+          console.error('AI move failed:', aiMoveResult.error);
+        } else {
+          console.log('AI move completed:', aiMoveResult);
+        }
+      }, 1500); // 1.5 second delay
+    }
+    
+    const gameState = game.getState(playerId);
+    console.log('Sending game state:', gameState);
+    
+    res.json({
+      gameId,
+      playerId,
+      ...gameState
+    });
+  } catch (error) {
+    console.error('Error in move endpoint:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-  
-  res.json({
-    gameId,
-    playerId,
-    ...game.getState(playerId)
-  });
 });
 
 // Reset game
