@@ -23,6 +23,7 @@ class TicTacToeMultiplayerClient {
         this.API_BASE_URL = 'http://localhost:3000/api';
         this.API_RETRY_ATTEMPTS = 3;
         this.API_RETRY_DELAY = 1000; // 1 second
+        this.serverAvailable = false;
         
         this.initializeElements();
         this.attachEventListeners();
@@ -238,6 +239,14 @@ class TicTacToeMultiplayerClient {
                 this.startAiGameBtn.style.pointerEvents = 'auto';
                 console.log('Manually enabled button and pointer events');
             }
+        };
+        
+        // DEBUG: Add server test function
+        window.testServer = async () => {
+            console.log('=== MANUAL SERVER TEST ===');
+            const result = await this.testConnection();
+            console.log('Server test result:', result);
+            console.log('Server available:', this.serverAvailable);
         };
         
         // Add a function to manually enable the AI button
@@ -718,20 +727,49 @@ class TicTacToeMultiplayerClient {
     async testConnection() {
         try {
             console.log('Testing connection to server...');
-            const response = await fetch(`${this.API_BASE_URL.replace('/api', '')}/health`);
+            const response = await fetch(`${this.API_BASE_URL.replace('/api', '')}/health`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                },
+                mode: 'cors'
+            });
+            
+            console.log('Health check response status:', response.status);
+            console.log('Health check response headers:', response.headers);
+            
             if (response.ok) {
                 const data = await response.json();
                 console.log('Server connection test successful:', data);
+                this.serverAvailable = true;
+                return true;
             } else {
-                console.warn('Server health check failed:', response.status);
+                console.warn('Server health check failed:', response.status, response.statusText);
+                this.serverAvailable = false;
+                return false;
             }
         } catch (error) {
             console.error('Server connection test failed:', error);
-            this.showError('無法連接到遊戲伺服器。請確保伺服器正在運行。');
+            console.error('Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
+            
+            // Don't show error immediately, just log it
+            // The error will be shown when actual API calls fail
+            this.serverAvailable = false;
+            return false;
         }
     }
 
     async apiCall(endpoint, options = {}, retryCount = 0) {
+        // Check server availability first
+        if (!this.serverAvailable && retryCount === 0) {
+            console.log('Server availability unknown, testing connection first...');
+            await this.testConnection();
+        }
+        
         try {
             console.log(`Making API call to: ${this.API_BASE_URL}${endpoint} (attempt ${retryCount + 1})`);
             console.log('Options:', options);
@@ -781,10 +819,16 @@ class TicTacToeMultiplayerClient {
             
             // More specific error messages
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                this.showError('無法連接到伺服器。請檢查網路連接或稍後再試。');
+                console.error('Network error - server may be down or unreachable');
+                this.showError('無法連接到伺服器。請確保伺服器正在運行 (npm start) 並檢查網路連接。');
             } else if (error.message.includes('Failed to fetch')) {
-                this.showError('網路連接失敗。請檢查網路連接或重新整理頁面。');
+                console.error('Fetch failed - possible CORS or network issue');
+                this.showError('網路連接失敗。請檢查瀏覽器控制台獲取詳細錯誤信息。');
+            } else if (error.message.includes('CORS')) {
+                console.error('CORS error detected');
+                this.showError('跨域請求被阻止。請檢查伺服器 CORS 配置。');
             } else {
+                console.error('API error:', error.message);
                 this.showError(`API 錯誤: ${error.message}`);
             }
             throw error;
