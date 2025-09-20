@@ -1098,14 +1098,14 @@ class TicTacToeMultiplayerClient {
         let allSymbols = [];
         
         if (this.selectedTheme === 'mahjong') {
-            // Mahjong tiles symbols - use simple text for testing
-            allSymbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+            // Mahjong tiles symbols
+            allSymbols = ['🀄', '🀅', '🀆', '🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎', '🀏', '🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗', '🀘', '🀙', '🀚', '🀛', '🀜', '🀝', '🀞', '🀟', '🀠', '🀡', '🀢', '🀣', '🀤', '🀥', '🀦', '🀧', '🀨', '🀩', '🀪', '🀫'];
         } else if (this.selectedTheme === 'poker') {
-            // Poker/Playing cards symbols - use simple text for testing
-            allSymbols = ['♠', '♥', '♦', '♣', 'A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2'];
+            // Poker/Playing cards symbols
+            allSymbols = ['🂡', '🂢', '🂣', '🂤', '🂥', '🂦', '🂧', '🂨', '🂩', '🂪', '🂫', '🂬', '🂭', '🂮', '🂯', '🂰', '🂱', '🂲', '🂳', '🂴', '🂵', '🂶', '🂷', '🂸', '🂹', '🂺', '🂻', '🂼', '🂽', '🂾', '🂿', '🃀', '🃁', '🃂', '🃃', '🃄', '🃅', '🃆', '🃇', '🃈', '🃉', '🃊', '🃋', '🃌', '🃍', '🃎', '🃏'];
         } else if (this.selectedTheme === 'combined') {
-            // Combined theme - use simple text for testing
-            allSymbols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+            // Combined theme - mix of different symbols
+            allSymbols = ['🐶', '🐱', '🀄', '🀅', '🂡', '🂢', '🎲', '🎯', '⭐', '🌟', '💎', '🔮', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪', '🎨', '🎭', '🎪'];
         } else {
             // Animal emojis (default) - use simple text for testing
             allSymbols = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮'];
@@ -1193,7 +1193,8 @@ class TicTacToeMultiplayerClient {
             
             if (card.isMatched) {
                 cardElement.classList.add('matched');
-            } else if (card.isFlipped) {
+            }
+            if (card.isFlipped) {
                 cardElement.classList.add('flipped');
             }
             
@@ -1201,16 +1202,18 @@ class TicTacToeMultiplayerClient {
                 cardElement.classList.add('extra-card');
             }
             
-            // Simple test - show the symbol directly for debugging
+            // Proper card structure for flip animation
             const cardHTML = `
                 <div class="card-inner">
                     <div class="card-front">❓</div>
-                    <div class="card-back" style="background: red; color: white; font-size: 24px;">${card.symbol}</div>
+                    <div class="card-back">${card.symbol}</div>
                 </div>
             `;
             
             console.log(`Card ${index} HTML:`, cardHTML);
             console.log(`Card ${index} symbol: "${card.symbol}"`);
+            console.log(`Card ${index} theme: "${this.selectedTheme}"`);
+            console.log(`Card element classes:`, cardElement.className);
             
             cardElement.innerHTML = cardHTML;
             
@@ -1233,8 +1236,13 @@ class TicTacToeMultiplayerClient {
         card.isFlipped = true;
         this.flippedCards.push(index);
         
-        // Update UI
-        this.renderMemoryBoard();
+        // Update UI by adding flipped class to the specific card
+        const cardElement = this.memoryBoard.children[index];
+        if (cardElement) {
+            cardElement.classList.add('flipped');
+            console.log(`Card ${index} flipped. Symbol: "${card.symbol}", Element classes:`, cardElement.className);
+            console.log(`Card element:`, cardElement);
+        }
         
         // Check if we have two flipped cards
         if (this.flippedCards.length === 2) {
@@ -1262,10 +1270,19 @@ class TicTacToeMultiplayerClient {
             } else {
                 // No match, flip back after delay
                 setTimeout(() => {
+                    // Store the indices before clearing the array
+                    const flippedIndex1 = this.flippedCards[0];
+                    const flippedIndex2 = this.flippedCards[1];
+                    
                     card1.isFlipped = false;
                     card2.isFlipped = false;
                     this.flippedCards = [];
-                    this.renderMemoryBoard();
+                    
+                    // Remove flipped class from both cards
+                    const cardElement1 = this.memoryBoard.children[flippedIndex1];
+                    const cardElement2 = this.memoryBoard.children[flippedIndex2];
+                    if (cardElement1) cardElement1.classList.remove('flipped');
+                    if (cardElement2) cardElement2.classList.remove('flipped');
                 }, 1000);
             }
         }
