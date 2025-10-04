@@ -19,8 +19,8 @@ class TicTacToeMultiplayerClient {
         this.selectedMemorySize = 4;
         this.selectedTheme = 'animals';
         
-        // API configuration
-        this.API_BASE_URL = 'http://localhost:3000/api';
+        // API configuration - dynamically determine API URL based on current domain
+        this.API_BASE_URL = this.getApiBaseUrl();
         this.API_RETRY_ATTEMPTS = 3;
         this.API_RETRY_DELAY = 1000; // 1 second
         this.serverAvailable = false;
@@ -33,6 +33,25 @@ class TicTacToeMultiplayerClient {
         this.testConnection().catch(() => {
             // Silently fail - errors will be shown when user actually tries to use the app
         });
+    }
+
+    getApiBaseUrl() {
+        // Get the current origin (protocol + hostname + port)
+        const origin = window.location.origin;
+        
+        // If we're running on localhost, use the default port 3000
+        if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+            return 'http://localhost:3000/api';
+        }
+        
+        // Check if we're on Netlify
+        if (origin.includes('netlify.app') || origin.includes('netlify.com')) {
+            // For Netlify, use Netlify Functions
+            return `${origin}/.netlify/functions/api`;
+        }
+        
+        // For ngrok or other external domains, use the same origin
+        return `${origin}/api`;
     }
 
     initializeElements() {
