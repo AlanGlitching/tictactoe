@@ -1,22 +1,3 @@
-const express = require('express');
-const app = express();
-
-// Middleware
-app.use(express.json());
-
-// CORS middleware
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
-    if (req.method === 'OPTIONS') {
-        res.sendStatus(200);
-    } else {
-        next();
-    }
-});
-
 // Game state storage (in production, use a database)
 const games = new Map();
 const matchmakingQueue = [];
@@ -207,280 +188,269 @@ class TicTacToeGame {
     }
 }
 
-// Routes
-
-// Create a new multiplayer game
-app.post('/game', (req, res) => {
+// Helper function to parse request body
+function parseBody(body) {
     try {
-        const gameId = `multi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const game = new TicTacToeGame(gameId, 'Host', 'medium');
-        game.isAI = false;
-        games.set(gameId, game);
-        
-        res.json({ gameId });
-    } catch (error) {
-        console.error('Error creating game:', error);
-        res.status(500).json({ error: 'Failed to create game' });
+        return JSON.parse(body);
+    } catch (e) {
+        return {};
     }
-});
+}
 
-// Join a multiplayer game
-app.post('/game/:gameId/join', (req, res) => {
-    try {
-        const { gameId } = req.params;
-        const { playerName } = req.body;
-        
-        const game = games.get(gameId);
-        if (!game) {
-            return res.status(404).json({ error: 'Game not found' });
-        }
+// Helper function to create response
+function createResponse(statusCode, body, headers = {}) {
+    return {
+        statusCode,
+        headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+            ...headers
+        },
+        body: JSON.stringify(body)
+    };
+}
 
-        if (game.players.length >= 2) {
-            return res.status(400).json({ error: 'Game is full' });
-        }
+// Main handler
+exports.handler = async (event, context) => {
+    const { httpMethod, path, body, queryStringParameters } = event;
+    const pathSegments = path.split('/').filter(segment => segment);
+    
+    console.log('Request:', { httpMethod, path, pathSegments });
 
-        const playerId = `player_${Date.now()}`;
-        game.players.push({ id: playerId, name: playerName, symbol: 'O' });
-        
-        if (game.players.length === 2) {
-            game.gameStatus = 'playing';
-        }
-
-        res.json({
-            playerId,
-            ...game.getGameState()
-        });
-    } catch (error) {
-        console.error('Error joining game:', error);
-        res.status(500).json({ error: 'Failed to join game' });
+    // Handle CORS preflight
+    if (httpMethod === 'OPTIONS') {
+        return createResponse(200, { message: 'CORS preflight' });
     }
-});
 
-// Get player-specific game state
-app.get('/game/:gameId/player/:playerId', (req, res) => {
     try {
-        const { gameId, playerId } = req.params;
-        const game = games.get(gameId);
-        
-        if (!game) {
-            return res.status(404).json({ error: 'Game not found' });
-        }
-
-        res.json(game.getGameState());
-    } catch (error) {
-        console.error('Error getting player game state:', error);
-        res.status(500).json({ error: 'Failed to get game state' });
-    }
-});
-
-// Matchmaking endpoints
-app.post('/matchmaking/join', (req, res) => {
-    try {
-        const { playerName } = req.body;
-        const playerId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        // Add to matchmaking queue
-        matchmakingQueue.push({ playerId, playerName, joinedAt: Date.now() });
-        
-        res.json({ playerId, status: 'queued' });
-    } catch (error) {
-        console.error('Error joining matchmaking:', error);
-        res.status(500).json({ error: 'Failed to join matchmaking' });
-    }
-});
-
-app.get('/matchmaking/match/:playerId', (req, res) => {
-    try {
-        const { playerId } = req.params;
-        
-        // Find player in queue
-        const playerIndex = matchmakingQueue.findIndex(p => p.playerId === playerId);
-        if (playerIndex === -1) {
-            return res.status(404).json({ error: 'Player not found in queue' });
-        }
-
-        // Check if we have enough players for a match
-        if (matchmakingQueue.length >= 2) {
-            const player1 = matchmakingQueue[0];
-            const player2 = matchmakingQueue[1];
+        // Route: POST /game/ai
+        if (httpMethod === 'POST' && pathSegments[0] === 'game' && pathSegments[1] === 'ai') {
+            const { playerName, difficulty = 'medium' } = parseBody(body);
             
-            // Remove both players from queue
-            matchmakingQueue.splice(0, 2);
+            if (!playerName || playerName.trim() === '') {
+                return createResponse(400, { error: 'Player name is required' });
+            }
+
+            const gameId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const game = new TicTacToeGame(gameId, playerName.trim(), difficulty);
             
-            // Create new game
-            const gameId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            const game = new TicTacToeGame(gameId, player1.playerName, 'medium');
-            game.isAI = false;
-            game.players = [
-                { id: player1.playerId, name: player1.playerName, symbol: 'X' },
-                { id: player2.playerId, name: player2.playerName, symbol: 'O' }
-            ];
+            // Start the game immediately
             game.gameStatus = 'playing';
+            
             games.set(gameId, game);
             
-            res.json({
-                matched: true,
+            return createResponse(200, {
                 gameId,
-                player1: { id: player1.playerId, name: player1.playerName },
-                player2: { id: player2.playerId, name: player2.playerName }
+                playerId: 'player',
+                ...game.getGameState()
             });
-        } else {
-            res.json({ matched: false });
-        }
-    } catch (error) {
-        console.error('Error checking match:', error);
-        res.status(500).json({ error: 'Failed to check match' });
-    }
-});
-
-app.get('/matchmaking/status/:playerId', (req, res) => {
-    try {
-        const { playerId } = req.params;
-        
-        const playerIndex = matchmakingQueue.findIndex(p => p.playerId === playerId);
-        if (playerIndex === -1) {
-            return res.status(404).json({ error: 'Player not found in queue' });
         }
 
-        res.json({
-            position: playerIndex + 1,
-            totalPlayers: matchmakingQueue.length,
-            estimatedWaitTime: matchmakingQueue.length * 30 // 30 seconds per player
-        });
-    } catch (error) {
-        console.error('Error getting matchmaking status:', error);
-        res.status(500).json({ error: 'Failed to get matchmaking status' });
-    }
-});
+        // Route: POST /game/:gameId/move
+        if (httpMethod === 'POST' && pathSegments[0] === 'game' && pathSegments[2] === 'move') {
+            const gameId = pathSegments[1];
+            const { position, playerId } = parseBody(body);
+            
+            const game = games.get(gameId);
+            if (!game) {
+                return createResponse(404, { error: 'Game not found' });
+            }
 
-app.post('/game/ai', (req, res) => {
-    try {
-        const { playerName, difficulty = 'medium' } = req.body;
-        
-        if (!playerName || playerName.trim() === '') {
-            return res.status(400).json({ error: 'Player name is required' });
+            if (game.gameStatus !== 'playing') {
+                return createResponse(400, { error: 'Game is not in playing state' });
+            }
+
+            const result = game.makeMove(position, playerId);
+            if (!result.success) {
+                return createResponse(400, { error: result.message });
+            }
+
+            // If it's AI's turn and game is still playing, make AI move
+            if (game.gameStatus === 'playing' && game.currentPlayer === 'O') {
+                const aiMove = game.getAIMove();
+                if (aiMove !== null) {
+                    game.makeMove(aiMove, 'ai');
+                }
+            }
+
+            return createResponse(200, game.getGameState());
         }
 
-        const gameId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const game = new TicTacToeGame(gameId, playerName.trim(), difficulty);
-        
-        // Start the game immediately
-        game.gameStatus = 'playing';
-        
-        games.set(gameId, game);
-        
-        res.json({
-            gameId,
-            playerId: 'player',
-            ...game.getGameState()
-        });
-    } catch (error) {
-        console.error('Error creating AI game:', error);
-        res.status(500).json({ error: 'Failed to create AI game' });
-    }
-});
+        // Route: GET /game/:gameId
+        if (httpMethod === 'GET' && pathSegments[0] === 'game' && pathSegments.length === 2) {
+            const gameId = pathSegments[1];
+            const game = games.get(gameId);
+            
+            if (!game) {
+                return createResponse(404, { error: 'Game not found' });
+            }
 
-app.post('/game/:gameId/move', (req, res) => {
-    try {
-        const { gameId } = req.params;
-        const { position, playerId } = req.body;
-        
-        const game = games.get(gameId);
-        if (!game) {
-            return res.status(404).json({ error: 'Game not found' });
+            return createResponse(200, game.getGameState());
         }
 
-        if (game.gameStatus !== 'playing') {
-            return res.status(400).json({ error: 'Game is not in playing state' });
+        // Route: POST /game/:gameId/rematch
+        if (httpMethod === 'POST' && pathSegments[0] === 'game' && pathSegments[2] === 'rematch') {
+            const gameId = pathSegments[1];
+            const { playerId } = parseBody(body);
+            
+            const game = games.get(gameId);
+            if (!game) {
+                return createResponse(404, { error: 'Game not found' });
+            }
+
+            // Reset game state
+            game.board = Array(9).fill(null);
+            game.currentPlayer = 'X';
+            game.gameStatus = 'playing';
+            game.winner = null;
+            game.winningLine = null;
+
+            return createResponse(200, game.getGameState());
         }
 
-        const result = game.makeMove(position, playerId);
-        if (!result.success) {
-            return res.status(400).json({ error: result.message });
+        // Route: POST /game/:gameId/disconnect
+        if (httpMethod === 'POST' && pathSegments[0] === 'game' && pathSegments[2] === 'disconnect') {
+            const gameId = pathSegments[1];
+            const { playerId } = parseBody(body);
+            
+            const game = games.get(gameId);
+            if (game) {
+                game.gameStatus = 'finished';
+                games.delete(gameId);
+            }
+
+            return createResponse(200, { success: true });
         }
 
-        // If it's AI's turn and game is still playing, make AI move
-        if (game.gameStatus === 'playing' && game.currentPlayer === 'O') {
-            const aiMove = game.getAIMove();
-            if (aiMove !== null) {
-                game.makeMove(aiMove, 'ai');
+        // Route: GET /game/:gameId/player/:playerId
+        if (httpMethod === 'GET' && pathSegments[0] === 'game' && pathSegments[2] === 'player') {
+            const gameId = pathSegments[1];
+            const playerId = pathSegments[3];
+            const game = games.get(gameId);
+            
+            if (!game) {
+                return createResponse(404, { error: 'Game not found' });
+            }
+
+            return createResponse(200, game.getGameState());
+        }
+
+        // Route: POST /game
+        if (httpMethod === 'POST' && pathSegments[0] === 'game' && pathSegments.length === 1) {
+            const gameId = `multi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const game = new TicTacToeGame(gameId, 'Host', 'medium');
+            game.isAI = false;
+            games.set(gameId, game);
+            
+            return createResponse(200, { gameId });
+        }
+
+        // Route: POST /game/:gameId/join
+        if (httpMethod === 'POST' && pathSegments[0] === 'game' && pathSegments[2] === 'join') {
+            const gameId = pathSegments[1];
+            const { playerName } = parseBody(body);
+            
+            const game = games.get(gameId);
+            if (!game) {
+                return createResponse(404, { error: 'Game not found' });
+            }
+
+            if (game.players.length >= 2) {
+                return createResponse(400, { error: 'Game is full' });
+            }
+
+            const playerId = `player_${Date.now()}`;
+            game.players.push({ id: playerId, name: playerName, symbol: 'O' });
+            
+            if (game.players.length === 2) {
+                game.gameStatus = 'playing';
+            }
+
+            return createResponse(200, {
+                playerId,
+                ...game.getGameState()
+            });
+        }
+
+        // Route: POST /matchmaking/join
+        if (httpMethod === 'POST' && pathSegments[0] === 'matchmaking' && pathSegments[1] === 'join') {
+            const { playerName } = parseBody(body);
+            const playerId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Add to matchmaking queue
+            matchmakingQueue.push({ playerId, playerName, joinedAt: Date.now() });
+            
+            return createResponse(200, { playerId, status: 'queued' });
+        }
+
+        // Route: GET /matchmaking/match/:playerId
+        if (httpMethod === 'GET' && pathSegments[0] === 'matchmaking' && pathSegments[1] === 'match') {
+            const playerId = pathSegments[2];
+            
+            // Find player in queue
+            const playerIndex = matchmakingQueue.findIndex(p => p.playerId === playerId);
+            if (playerIndex === -1) {
+                return createResponse(404, { error: 'Player not found in queue' });
+            }
+
+            // Check if we have enough players for a match
+            if (matchmakingQueue.length >= 2) {
+                const player1 = matchmakingQueue[0];
+                const player2 = matchmakingQueue[1];
+                
+                // Remove both players from queue
+                matchmakingQueue.splice(0, 2);
+                
+                // Create new game
+                const gameId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                const game = new TicTacToeGame(gameId, player1.playerName, 'medium');
+                game.isAI = false;
+                game.players = [
+                    { id: player1.playerId, name: player1.playerName, symbol: 'X' },
+                    { id: player2.playerId, name: player2.playerName, symbol: 'O' }
+                ];
+                game.gameStatus = 'playing';
+                games.set(gameId, game);
+                
+                return createResponse(200, {
+                    matched: true,
+                    gameId,
+                    player1: { id: player1.playerId, name: player1.playerName },
+                    player2: { id: player2.playerId, name: player2.playerName }
+                });
+            } else {
+                return createResponse(200, { matched: false });
             }
         }
 
-        res.json(game.getGameState());
-    } catch (error) {
-        console.error('Error making move:', error);
-        res.status(500).json({ error: 'Failed to make move' });
-    }
-});
+        // Route: GET /matchmaking/status/:playerId
+        if (httpMethod === 'GET' && pathSegments[0] === 'matchmaking' && pathSegments[1] === 'status') {
+            const playerId = pathSegments[2];
+            
+            const playerIndex = matchmakingQueue.findIndex(p => p.playerId === playerId);
+            if (playerIndex === -1) {
+                return createResponse(404, { error: 'Player not found in queue' });
+            }
 
-app.get('/game/:gameId', (req, res) => {
-    try {
-        const { gameId } = req.params;
-        const game = games.get(gameId);
-        
-        if (!game) {
-            return res.status(404).json({ error: 'Game not found' });
+            return createResponse(200, {
+                position: playerIndex + 1,
+                totalPlayers: matchmakingQueue.length,
+                estimatedWaitTime: matchmakingQueue.length * 30 // 30 seconds per player
+            });
         }
 
-        res.json(game.getGameState());
-    } catch (error) {
-        console.error('Error getting game:', error);
-        res.status(500).json({ error: 'Failed to get game' });
-    }
-});
-
-app.post('/game/:gameId/rematch', (req, res) => {
-    try {
-        const { gameId } = req.params;
-        const { playerId } = req.body;
-        
-        const game = games.get(gameId);
-        if (!game) {
-            return res.status(404).json({ error: 'Game not found' });
+        // Route: GET /health
+        if (httpMethod === 'GET' && pathSegments[0] === 'health') {
+            return createResponse(200, { status: 'ok', timestamp: new Date().toISOString() });
         }
 
-        // Reset game state
-        game.board = Array(9).fill(null);
-        game.currentPlayer = 'X';
-        game.gameStatus = 'playing';
-        game.winner = null;
-        game.winningLine = null;
+        // 404 for unknown routes
+        return createResponse(404, { error: 'Endpoint not found' });
 
-        res.json(game.getGameState());
     } catch (error) {
-        console.error('Error rematching:', error);
-        res.status(500).json({ error: 'Failed to rematch' });
+        console.error('Function error:', error);
+        return createResponse(500, { error: 'Internal server error' });
     }
-});
-
-app.post('/game/:gameId/disconnect', (req, res) => {
-    try {
-        const { gameId } = req.params;
-        const { playerId } = req.body;
-        
-        const game = games.get(gameId);
-        if (game) {
-            game.gameStatus = 'finished';
-            games.delete(gameId);
-        }
-
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error disconnecting:', error);
-        res.status(500).json({ error: 'Failed to disconnect' });
-    }
-});
-
-// Health check
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Catch all handler
-app.use('*', (req, res) => {
-    res.status(404).json({ error: 'Endpoint not found' });
-});
-
-// Export the Express app
-module.exports = app;
+};
