@@ -215,9 +215,18 @@ function createResponse(statusCode, body, headers = {}) {
 // Main handler
 exports.handler = async (event, context) => {
     const { httpMethod, path, body, queryStringParameters } = event;
-    const pathSegments = path.split('/').filter(segment => segment);
     
-    console.log('Request:', { httpMethod, path, pathSegments });
+    // Remove leading slash and split
+    const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    const pathSegments = cleanPath.split('/').filter(segment => segment);
+    
+    console.log('Request details:', { 
+        httpMethod, 
+        originalPath: path, 
+        cleanPath, 
+        pathSegments,
+        body: body ? (typeof body === 'string' ? body : JSON.stringify(body)) : 'no body'
+    });
 
     // Handle CORS preflight
     if (httpMethod === 'OPTIONS') {
@@ -227,6 +236,7 @@ exports.handler = async (event, context) => {
     try {
         // Route: POST /game/ai
         if (httpMethod === 'POST' && pathSegments[0] === 'game' && pathSegments[1] === 'ai') {
+            console.log('Matched POST /game/ai route');
             const { playerName, difficulty = 'medium' } = parseBody(body);
             
             if (!playerName || playerName.trim() === '') {
@@ -447,7 +457,15 @@ exports.handler = async (event, context) => {
         }
 
         // 404 for unknown routes
-        return createResponse(404, { error: 'Endpoint not found' });
+        console.log('No route matched:', { httpMethod, pathSegments });
+        return createResponse(404, { 
+            error: 'Endpoint not found',
+            details: {
+                method: httpMethod,
+                path: path,
+                pathSegments: pathSegments
+            }
+        });
 
     } catch (error) {
         console.error('Function error:', error);
