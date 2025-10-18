@@ -43,7 +43,7 @@
                         <div class="choice-title">Memory Cards</div>
                         <div class="choice-desc">Flip cards to find matching pairs</div>
                     </button>
-                    <button id="choice-slot-btn" class="btn btn-warning choice-btn" onclick="window.location.href='slot-machine.html'">
+                    <button id="choice-slot-btn" class="btn btn-warning choice-btn">
                         <div class="choice-icon">🎰</div>
                         <div class="choice-title">Slot Machine</div>
                         <div class="choice-desc">Spin the reels and win big!</div>
@@ -191,6 +191,125 @@
                     <div class="previous-guesses" id="previous-guesses"></div>
                 </div>
                 <button id="back-to-choice-btn5" class="btn btn-link">← Back to Games</button>
+            </div>
+        </div>
+
+        <!-- Slot Machine Game Screen -->
+        <div id="slot-screen" class="screen hidden">
+            <div class="slot-machine-container">
+                <div class="machine-header">
+                    <div class="machine-title">777 SLOT MACHINE</div>
+                    <div class="machine-subtitle">Lucky 7's Casino</div>
+                </div>
+
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <div class="stat-label">Credits</div>
+                        <div class="stat-value" id="slot-credits">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Current Bet</div>
+                        <div class="stat-value" id="slot-current-bet">10</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Total Won</div>
+                        <div class="stat-value" id="slot-total-won">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Games Played</div>
+                        <div class="stat-value" id="slot-games-played">0</div>
+                    </div>
+                </div>
+
+                <div class="game-panel">
+                    <div class="reels-container">
+                        <div class="reel" id="slot-reel1">
+                            <div class="symbols-container" id="slot-symbols1"></div>
+                        </div>
+                        <div class="reel" id="slot-reel2">
+                            <div class="symbols-container" id="slot-symbols2"></div>
+                        </div>
+                        <div class="reel" id="slot-reel3">
+                            <div class="symbols-container" id="slot-symbols3"></div>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button class="btn btn-primary" id="slot-spin-btn">🎰 SPIN!</button>
+                        <button class="btn btn-secondary" id="slot-reset-btn">Reset Game</button>
+                        <button class="btn btn-success" id="slot-back-btn">← Back to Games</button>
+                    </div>
+
+                    <div class="bet-controls">
+                        <button class="bet-btn" onclick="changeSlotBet(-10)">-10</button>
+                        <button class="bet-btn" onclick="changeSlotBet(-50)">-50</button>
+                        <button class="bet-btn" onclick="addSlotCredits(10)">+10</button>
+                        <button class="bet-btn" onclick="addSlotCredits(50)">+50</button>
+                        <button class="bet-btn" onclick="addSlotCredits(100)">+100</button>
+                    </div>
+
+                    <div class="credit-controls">
+                        <button class="credit-btn" onclick="addSlotCredits(100)">+100</button>
+                        <button class="credit-btn" onclick="addSlotCredits(500)">+500</button>
+                        <button class="credit-btn" onclick="addSlotCredits(1000)">+1000</button>
+                        <button class="credit-btn" onclick="resetSlotCredits()">Reset</button>
+                    </div>
+
+                    <div class="custom-amount">
+                        <input type="number" class="custom-input" id="slot-custom-amount" placeholder="Amount" min="1" max="10000">
+                        <button class="btn btn-success" onclick="addSlotCustomCredits()">Add Credits</button>
+                    </div>
+
+                    <div class="message" id="slot-message" style="display: none;"></div>
+                </div>
+
+                <div class="paytable">
+                    <h3>💰 PAYTABLE</h3>
+                    <div class="paytable-row jackpot">
+                        <div class="paytable-symbols">7️⃣7️⃣7️⃣</div>
+                        <div class="paytable-payout">50x</div>
+                    </div>
+                    <div class="paytable-row">
+                        <div class="paytable-symbols">🎰🎰🎰</div>
+                        <div class="paytable-payout">100x</div>
+                    </div>
+                    <div class="paytable-row">
+                        <div class="paytable-symbols">⭐⭐⭐</div>
+                        <div class="paytable-payout">25x</div>
+                    </div>
+                    <div class="paytable-row">
+                        <div class="paytable-symbols">💎💎💎</div>
+                        <div class="paytable-payout">20x</div>
+                    </div>
+                    <div class="paytable-row">
+                        <div class="paytable-symbols">🍎🍎🍎</div>
+                        <div class="paytable-payout">10x</div>
+                    </div>
+                    <div class="paytable-row">
+                        <div class="paytable-symbols">🍊🍊🍊</div>
+                        <div class="paytable-payout">8x</div>
+                    </div>
+                    <div class="paytable-row">
+                        <div class="paytable-symbols">🍋🍋🍋</div>
+                        <div class="paytable-payout">6x</div>
+                    </div>
+                    <div class="paytable-row">
+                        <div class="paytable-symbols">🍇🍇🍇</div>
+                        <div class="paytable-payout">4x</div>
+                    </div>
+                    <div class="paytable-row">
+                        <div class="paytable-symbols">🍒🍒🍒</div>
+                        <div class="paytable-payout">3x</div>
+                    </div>
+                    <div class="paytable-row bonus">
+                        <div class="paytable-symbols">Any 2 Match</div>
+                        <div class="paytable-payout">2x</div>
+                    </div>
+                    <div class="paytable-row">
+                        <div class="paytable-symbols">Wild (🎰)</div>
+                        <div class="paytable-payout">Substitutes</div>
+                    </div>
+                </div>
             </div>
         </div>
 
