@@ -1,7 +1,6 @@
 [build]
   publish = "public"
-  command = "npm run build"
-  functions = "netlify/functions"
+  command = "echo 'Static site build completed'"
 
 [[redirects]]
   from = "/*"
@@ -9,5 +8,4 @@
   status = 200
 
 [build.environment]
-  NODE_VERSION = "18"
-  NPM_FLAGS = "--legacy-peer-deps" 
+  NODE_VERSION = "18" 

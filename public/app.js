@@ -44,10 +44,10 @@ class TicTacToeMultiplayerClient {
             return 'http://localhost:3000/api';
         }
         
-        // Check if we're on Netlify
+        // Check if we're on Netlify - use Railway backend
         if (origin.includes('netlify.app') || origin.includes('netlify.com')) {
-            // For Netlify, use Netlify Functions
-            return `${origin}/.netlify/functions/api`;
+            // For Netlify deployment, use Railway backend from config
+            return window.APP_CONFIG?.RAILWAY_API_URL || 'https://your-railway-app.railway.app/api';
         }
         
         // For ngrok or other external domains, use the same origin
