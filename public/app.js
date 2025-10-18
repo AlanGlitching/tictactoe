@@ -272,6 +272,29 @@ class TicTacToeMultiplayerClient {
             console.log('Server available:', this.serverAvailable);
         };
         
+        // DEBUG: Add cell state debugging function
+        window.debugCells = () => {
+            console.log('=== CELL STATE DEBUG ===');
+            this.cells.forEach((cell, index) => {
+                const isDisabled = cell.classList.contains('disabled');
+                const pointerEvents = window.getComputedStyle(cell).pointerEvents;
+                const hasContent = cell.textContent.trim() !== '';
+                console.log(`Cell ${index}:`, {
+                    disabled: isDisabled,
+                    pointerEvents: pointerEvents,
+                    hasContent: hasContent,
+                    textContent: cell.textContent,
+                    classes: cell.className
+                });
+            });
+            console.log('Game state:', {
+                gameStatus: this.gameState?.gameStatus,
+                yourTurn: this.gameState?.yourTurn,
+                currentPlayer: this.gameState?.currentPlayer,
+                board: this.gameState?.board
+            });
+        };
+        
         // Add a function to manually enable the AI button
         window.enableAIButton = () => {
             if (this.startAiGameBtn) {
@@ -958,6 +981,7 @@ class TicTacToeMultiplayerClient {
             
             console.log('Move successful, updating UI...');
             this.updateUI();
+            // updateUI() will handle pointer events correctly, so we don't need to reset here
         } catch (error) {
             console.error('Failed to make move:', error);
             // Re-enable the cell if the move failed
@@ -1638,12 +1662,16 @@ class TicTacToeMultiplayerClient {
             // Disable cells based on game state and turn
             const shouldDisable = !this.gameState || 
                                 this.gameState.gameStatus !== 'playing' || 
-                                this.gameState.gameStatus === 'paused' ||
                                 !this.gameState.yourTurn ||
                                 (this.gameState.board && this.gameState.board[index] !== null);
             
             if (shouldDisable) {
                 cell.classList.add('disabled');
+                // Ensure pointer events are disabled via CSS class
+                cell.style.pointerEvents = 'none';
+            } else {
+                // Ensure pointer events are enabled when cell should be clickable
+                cell.style.pointerEvents = 'auto';
             }
         });
 
