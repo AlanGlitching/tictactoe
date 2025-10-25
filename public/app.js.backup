@@ -1164,12 +1164,36 @@ class TicTacToeMultiplayerClient {
         this.addDifficultySelectionListeners();
     }
     
-    initializeSlotGame() {
-        // Initialize slot machine if not already done
-        if (!window.slotMachine) {
+        initializeSlotGame() {
+            // Always recreate the slot machine to ensure fresh state
+            console.log('Initializing slot machine...');
             window.slotMachine = new SlotMachine();
+            
+            // Force immediate refresh
+            if (window.slotMachine) {
+                console.log('Refreshing slot machine...');
+                window.slotMachine.forceRefreshDisplay();
+                
+                // Additional checks to ensure no blank reels
+                setTimeout(() => {
+                    window.slotMachine.symbolContainers.forEach((container, index) => {
+                        if (container && container.children.length === 0) {
+                            console.log(`Detected blank reel ${index + 1}, fixing...`);
+                            window.slotMachine.initializeSingleReel(container, index);
+                        }
+                    });
+                }, 200);
+                
+                setTimeout(() => {
+                    window.slotMachine.symbolContainers.forEach((container, index) => {
+                        if (container && container.children.length === 0) {
+                            console.log(`Second check - blank reel ${index + 1}, forcing fix...`);
+                            window.slotMachine.initializeSingleReel(container, index);
+                        }
+                    });
+                }, 500);
+            }
         }
-    }
 
     addDifficultySelectionListeners() {
         const difficultyOptions = document.querySelectorAll('.difficulty-option');
@@ -1781,7 +1805,7 @@ class TicTacToeMultiplayerClient {
         
         // Show pause message if game is paused
         if (gamePaused) {
-            showMessage('Game paused - waiting for opponent to return', 'info');
+            this.showMessage('Game paused - waiting for opponent to return', 'info');
         }
         
         // Show rematch request popup if opponent requested rematch
@@ -1812,11 +1836,11 @@ class TicTacToeMultiplayerClient {
     }
 
     showSuccess(message) {
-        showMessage(message, 'success');
+        this.showMessage(message, 'success');
     }
 
     showError(message) {
-        showMessage(message, 'error');
+        this.showMessage(message, 'error');
     }
 
     showMessage(message, type = 'info') {
@@ -2129,8 +2153,6 @@ class TicTacToeMultiplayerClient {
     // Initialize the game when the page loads
     document.addEventListener('DOMContentLoaded', () => {
         window.gameClient = new TicTacToeMultiplayerClient();
-        window.slotMachine = new SlotMachine();
-        setupEventListeners();
     });
     
     // Handle page unload/disconnect
@@ -2162,7 +2184,7 @@ class TicTacToeMultiplayerClient {
 
     // Slot Machine Game Class
     class SlotMachine {
-        constructor() {
+    constructor() {
             this.credits = 0;
             this.bet = 10;
             this.totalWon = 0;
@@ -2207,317 +2229,259 @@ class TicTacToeMultiplayerClient {
                 document.getElementById('slot-symbols3')
             ];
             
-            // Check if all elements exist
-            this.validateElements();
-            
+            // Initialize immediately
             this.initializeReels();
             this.updateDisplay();
-            setupEventListeners();
-        }
-        
-        updateDisplay() {
-            document.getElementById('slot-credits').textContent = this.credits;
-            document.getElementById('slot-current-bet').textContent = this.bet;
-            document.getElementById('slot-total-won').textContent = this.totalWon;
-            document.getElementById('slot-games-played').textContent = this.gamesPlayed;
-        }
-        
-        validateElements() {
-            console.log('Validating slot machine elements...');
-            
-            // Check reels
-            this.reels.forEach((reel, index) => {
-                if (!reel) {
-                    console.error(`Reel ${index + 1} not found!`);
-                } else {
-                    console.log(`Reel ${index + 1} found:`, reel);
-                    console.log(`Reel ${index + 1} innerHTML:`, reel.innerHTML);
-                }
-            });
-            
-            // Check symbol containers
-            this.symbolContainers.forEach((container, index) => {
-                if (!container) {
-                    console.error(`Symbol container ${index + 1} not found!`);
-                } else {
-                    console.log(`Symbol container ${index + 1} found:`, container);
-                    console.log(`Symbol container ${index + 1} innerHTML:`, container.innerHTML);
-                }
-            });
-            
-            // If any containers are missing, try to create them
-            this.reels.forEach((reel, index) => {
-                if (reel && !this.symbolContainers[index]) {
-                    console.log(`Creating missing symbol container for reel ${index + 1}`);
-                    const container = document.createElement('div');
-                    container.className = 'symbols-container';
-                    container.id = `slot-symbols${index + 1}`;
-                    reel.appendChild(container);
-                    this.symbolContainers[index] = container;
-                }
-            });
+        this.setupEventListeners();
         }
         
         initializeReels() {
             console.log('Initializing reels...');
             
+            // Check if all containers exist
             this.symbolContainers.forEach((container, index) => {
-                console.log(`Initializing container ${index + 1}:`, container);
-                
                 if (!container) {
-                    console.error(`Container ${index + 1} is null!`);
+                    console.error(`Container ${index + 1} not found!`);
                     return;
                 }
+            });
+            
+            this.symbolContainers.forEach((container, index) => {
+                console.log(`Initializing reel ${index + 1}:`, container);
                 
+                // Clear existing content
                 container.innerHTML = '';
                 
-                // Create random symbols for each reel
-                for (let i = 0; i < 20; i++) {
+                // Create 50 symbols for smoother scrolling
+                for (let i = 0; i < 50; i++) {
                     const symbol = document.createElement('div');
                     symbol.className = 'symbol';
-                    const symbolText = this.symbols[Math.floor(Math.random() * this.symbols.length)];
-                    symbol.textContent = symbolText;
-                    symbol.innerHTML = symbolText;
+                    symbol.textContent = this.symbols[Math.floor(Math.random() * this.symbols.length)];
                     
-                    // Force all styles
+                    // Set all styles inline with !important
                     symbol.style.cssText = `
-                        height: 60px;
-                        width: 100%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 2.5em;
-                        color: #f39c12;
-                        background: rgba(0,0,0,0.1);
-                        border: 1px solid rgba(243, 156, 18, 0.2);
-                        margin: 2px 0;
-                        visibility: visible;
-                        opacity: 1;
+                        height: 60px !important;
+                        width: 100% !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        font-size: 2.5em !important;
+                        color: #f39c12 !important;
+                        text-shadow: 2px 2px 4px rgba(0,0,0,0.8) !important;
+                        border-bottom: 1px solid rgba(243, 156, 18, 0.2) !important;
+                        background: rgba(0,0,0,0.1) !important;
+                        flex-shrink: 0 !important;
+                        transition: all 0.3s ease !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        box-sizing: border-box !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
                     `;
                     
                     container.appendChild(symbol);
                 }
                 
-                // Set initial position to show the first 3 symbols
-                container.style.transform = 'translateY(0px)';
+                console.log(`Created ${container.children.length} symbols for reel ${index + 1}`);
                 
-                // Force display to ensure symbols are visible
+                // Set container styles with !important
                 container.style.cssText = `
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 300px;
-                    display: flex;
-                    flex-direction: column;
-                    visibility: visible;
-                    opacity: 1;
-                    z-index: 1;
+                    position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    height: 300px !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    transform: translateY(0px) !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    z-index: 3 !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    box-sizing: border-box !important;
+                    animation: none !important;
+                    transition: none !important;
                 `;
+                
+                // Remove any animation classes that might interfere
+                container.classList.remove('reel-spinning', 'reel-stopping');
                 
                 // Force a reflow to ensure the symbols are rendered
                 container.offsetHeight;
                 
-                console.log(`Container ${index + 1} initialized with ${container.children.length} symbols`);
-            });
-            
-            // Force refresh after a short delay to ensure all symbols are visible
-            setTimeout(() => {
-                this.forceRefreshDisplay();
-            }, 100);
-        }
-        
-        forceRefreshDisplay() {
-            this.symbolContainers.forEach((container, index) => {
-                if (container) {
-                    // Ensure container is visible
-                    container.style.display = 'flex';
-                    container.style.flexDirection = 'column';
-                    container.style.transform = 'translateY(0px)';
-                    
-                    // Force reflow
-                    container.offsetHeight;
-                    
-                    console.log(`Refreshed container ${index + 1}:`, container);
-                } else {
-                    console.error(`Container ${index + 1} is null!`);
-                }
-            });
-        }
-    }
-    
-    function setupEventListeners() {
-        document.getElementById('slot-spin-btn').addEventListener('click', () => window.slotMachine.spin());
-        document.getElementById('slot-reset-btn').addEventListener('click', () => window.slotMachine.resetGame());
-        document.getElementById('slot-back-btn').addEventListener('click', () => window.slotMachine.backToGames());
-        document.getElementById('slot-custom-amount').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                window.slotMachine.addCustomCredits();
-            }
-        });
-        
-        // Add a manual fix button for debugging
-        const fixButton = document.createElement('button');
-        fixButton.textContent = 'Fix Display';
-        fixButton.style.position = 'fixed';
-        fixButton.style.top = '10px';
-        fixButton.style.right = '10px';
-        fixButton.style.zIndex = '9999';
-        fixButton.style.padding = '10px';
-        fixButton.style.backgroundColor = '#ff6b6b';
-        fixButton.style.color = 'white';
-        fixButton.style.border = 'none';
-        fixButton.style.borderRadius = '5px';
-        fixButton.addEventListener('click', () => {
-            console.log('Manual fix triggered');
-            window.slotMachine.forceRefreshDisplay();
-            window.slotMachine.initializeReels();
-            window.slotMachine.forceShowSymbols();
-        });
-            document.body.appendChild(fixButton);
-            
-            // Force initialization after a delay
-            setTimeout(() => {
-                forceShowSymbols();
-            }, 500);
-            
-            // Add a simple test button
-            const testButton = document.createElement('button');
-            testButton.textContent = 'Test Symbols';
-            testButton.style.position = 'fixed';
-            testButton.style.top = '50px';
-            testButton.style.right = '10px';
-            testButton.style.zIndex = '9999';
-            testButton.style.padding = '10px';
-            testButton.style.backgroundColor = '#4CAF50';
-            testButton.style.color = 'white';
-            testButton.style.border = 'none';
-            testButton.style.borderRadius = '5px';
-            testButton.addEventListener('click', () => {
-                this.testSymbols();
-            });
-            document.body.appendChild(testButton);
-        }
-    
-    function forceShowSymbols() {
-        console.log('Force showing symbols...');
-        
-        if (window.slotMachine) {
-            window.slotMachine.symbolContainers.forEach((container, index) => {
-                if (!container) {
-                    console.error(`Container ${index + 1} is null!`);
-                    return;
-                }
-                
-                // Clear and recreate symbols
-                container.innerHTML = '';
-                
-                // Create random symbols for each reel
-                for (let i = 0; i < 20; i++) {
-                    const symbol = document.createElement('div');
-                    symbol.className = 'symbol';
-                    const symbolText = window.slotMachine.symbols[Math.floor(Math.random() * window.slotMachine.symbols.length)];
-                    symbol.textContent = symbolText;
-                    symbol.innerHTML = symbolText;
-                    
-                    // Force all styles
-                    symbol.style.cssText = `
-                        height: 60px;
-                        width: 100%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 2.5em;
-                        color: #f39c12;
-                        background: rgba(0,0,0,0.1);
-                        border: 1px solid rgba(243, 156, 18, 0.2);
-                        margin: 2px 0;
-                        visibility: visible;
-                        opacity: 1;
-                    `;
-                    
-                    container.appendChild(symbol);
-                    console.log(`Added symbol ${i + 1}: ${symbolText}`);
-                }
-                
-                // Force container styles
-                container.style.cssText = `
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 300px;
-                    display: flex;
-                    flex-direction: column;
-                    visibility: visible;
-                    opacity: 1;
-                    z-index: 1;
-                    transform: translateY(0px);
-                `;
-                
-                console.log(`Container ${index + 1} forced with ${container.children.length} symbols`);
-            });
-        }
-    }
-    
-    function testSymbols() {
-            console.log('Testing symbols...');
-            
-            // Test each reel directly
-            for (let i = 0; i < 3; i++) {
-                const reel = document.getElementById(`slot-reel${i + 1}`);
-                const container = document.getElementById(`slot-symbols${i + 1}`);
-                
-                console.log(`Testing reel ${i + 1}:`, reel);
-                console.log(`Testing container ${i + 1}:`, container);
-                
-                if (reel && container) {
-                    // Clear container
-                    container.innerHTML = '';
-                    
-                    // Add simple test symbols
-                    for (let j = 0; j < 5; j++) {
+                // Triple check that symbols are visible
+                if (container.children.length === 0) {
+                    console.error(`No symbols created for reel ${index + 1}!`);
+                    // Try to recreate symbols
+                    for (let i = 0; i < 50; i++) {
                         const symbol = document.createElement('div');
-                        symbol.textContent = '🍎';
+                        symbol.className = 'symbol';
+                        symbol.textContent = this.symbols[Math.floor(Math.random() * this.symbols.length)];
                         symbol.style.cssText = `
-                            height: 60px;
-                            width: 100%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-size: 3em;
-                            color: #f39c12;
-                            background: rgba(0,0,0,0.2);
-                            border: 2px solid #f39c12;
-                            margin: 2px 0;
+                            height: 60px !important;
+                            width: 100% !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            font-size: 2.5em !important;
+                            color: #f39c12 !important;
+                            text-shadow: 2px 2px 4px rgba(0,0,0,0.8) !important;
+                            border-bottom: 1px solid rgba(243, 156, 18, 0.2) !important;
+                            background: rgba(0,0,0,0.1) !important;
+                            flex-shrink: 0 !important;
+                            transition: all 0.3s ease !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            box-sizing: border-box !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
                         `;
                         container.appendChild(symbol);
                     }
-                    
-                    // Set container styles
-                    container.style.cssText = `
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 300px;
-                        display: flex;
-                        flex-direction: column;
-                        visibility: visible;
-                        opacity: 1;
-                        z-index: 10;
-                    `;
-                    
-                    console.log(`Reel ${i + 1} test completed with ${container.children.length} symbols`);
-                } else {
-                    console.error(`Reel ${i + 1} or container not found!`);
+                    console.log(`Recreated ${container.children.length} symbols for reel ${index + 1}`);
                 }
+                
+                // Final check - if still empty, force create at least one symbol
+                if (container.children.length === 0) {
+                    console.error(`CRITICAL: Still no symbols for reel ${index + 1}! Forcing creation...`);
+                    const emergencySymbol = document.createElement('div');
+                    emergencySymbol.className = 'symbol';
+                    emergencySymbol.textContent = '🍎'; // Fallback symbol
+                    emergencySymbol.style.cssText = `
+                        height: 60px !important;
+                        width: 100% !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        font-size: 2.5em !important;
+                        color: #f39c12 !important;
+                        text-shadow: 2px 2px 4px rgba(0,0,0,0.8) !important;
+                        border-bottom: 1px solid rgba(243, 156, 18, 0.2) !important;
+                        background: rgba(0,0,0,0.1) !important;
+                        flex-shrink: 0 !important;
+                        transition: all 0.3s ease !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        box-sizing: border-box !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                    `;
+                    container.appendChild(emergencySymbol);
+                    console.log(`Emergency symbol created for reel ${index + 1}`);
+                }
+            });
+            
+            console.log('All reels initialized');
+        }
+        
+        forceRefreshDisplay() {
+            console.log('Force refreshing display...');
+            this.initializeReels();
+            
+            // Force immediate visibility
+            this.symbolContainers.forEach((container, index) => {
+                if (container) {
+                    container.style.setProperty('display', 'flex', 'important');
+                    container.style.setProperty('visibility', 'visible', 'important');
+                    container.style.setProperty('opacity', '1', 'important');
+                    container.style.setProperty('transform', 'translateY(0px)', 'important');
+                    container.style.setProperty('animation', 'none', 'important');
+                    container.offsetHeight; // Force reflow
+                }
+            });
+            
+            // Additional check after a short delay
+            setTimeout(() => {
+                this.symbolContainers.forEach((container, index) => {
+                    if (container && container.children.length === 0) {
+                        console.log(`Force fixing empty reel ${index + 1}`);
+                        this.initializeSingleReel(container, index);
+                    }
+                });
+            }, 100);
+        }
+        
+        initializeSingleReel(container, index) {
+            console.log(`Force initializing single reel ${index + 1}`);
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 50; i++) {
+                const symbol = document.createElement('div');
+                symbol.className = 'symbol';
+                symbol.textContent = this.symbols[Math.floor(Math.random() * this.symbols.length)];
+                symbol.style.cssText = `
+                    height: 60px !important;
+                    width: 100% !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    font-size: 2.5em !important;
+                    color: #f39c12 !important;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.8) !important;
+                    border-bottom: 1px solid rgba(243, 156, 18, 0.2) !important;
+                    background: rgba(0,0,0,0.1) !important;
+                    flex-shrink: 0 !important;
+                    transition: all 0.3s ease !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    box-sizing: border-box !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                `;
+                container.appendChild(symbol);
             }
+            
+            container.style.cssText = `
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 300px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                transform: translateY(0px) !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                z-index: 1 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-sizing: border-box !important;
+                animation: none !important;
+                transition: none !important;
+            `;
+            
+            container.offsetHeight; // Force reflow
+            console.log(`Fixed reel ${index + 1} with ${container.children.length} symbols`);
+        }
+        
+        // Removed duplicate code
+        
+        fixDisplay() {
+            console.log('Fixing display...');
+            this.initializeReels();
+            this.showMessage('Display fixed!', 'win');
+        }
+        
+        setupEventListeners() {
+            document.getElementById('slot-spin-btn').addEventListener('click', () => this.spin());
+            document.getElementById('slot-reset-btn').addEventListener('click', () => this.resetGame());
+            document.getElementById('slot-back-btn').addEventListener('click', () => this.backToGames());
+            document.getElementById('slot-custom-amount').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.addCustomCredits();
+                }
+            });
         }
         
         spin() {
-            if (this.isSpinning || this.credits < this.bet) {
-                showMessage('Not enough credits!', 'lose');
+            if (this.isSpinning) {
+                this.showMessage('Already spinning!', 'lose');
+                return;
+            }
+            
+            if (this.credits < this.bet) {
+                this.showMessage('Not enough credits! Add some credits first.', 'lose');
                 return;
             }
             
@@ -2526,170 +2490,137 @@ class TicTacToeMultiplayerClient {
             this.gamesPlayed++;
             this.updateDisplay();
             
-            // Clear previous highlights
-            clearHighlights();
-            
             // Ensure all reels have symbols before spinning
-            forceShowSymbols();
+            this.ensureAllReelsHaveSymbols();
+            
+            // Clear previous highlights
+            this.clearHighlights();
             
             // Start spinning animation
-            this.reels.forEach(reel => {
+            this.reels.forEach((reel, index) => {
+                console.log(`Adding spinning class to reel ${index + 1}`);
                 reel.classList.add('reel-spinning');
             });
             
+            // Also add spinning class to symbol containers
+            this.symbolContainers.forEach((container, index) => {
+                console.log(`Adding spinning class to container ${index + 1}`);
+                container.classList.add('reel-spinning');
+            });
+            
             // Stop reels at different times for suspense
-            setTimeout(() => stopReel(0), 3000);
-            setTimeout(() => stopReel(1), 4000);
-            setTimeout(() => stopReel(2), 5000);
+            setTimeout(() => this.stopReel(0), 800);
+            setTimeout(() => this.stopReel(1), 1200);
+            setTimeout(() => this.stopReel(2), 1600);
         }
         
-        changeBet(amount) {
-            const newBet = this.bet + amount;
-            if (newBet >= 10 && newBet <= this.credits) {
-                this.bet = newBet;
-                this.updateDisplay();
-            }
+        ensureAllReelsHaveSymbols() {
+            console.log('Ensuring all reels have symbols...');
+            this.symbolContainers.forEach((container, index) => {
+                if (!container || container.children.length === 0) {
+                    console.log(`Reel ${index + 1} is empty, initializing...`);
+                    this.initializeSingleReel(container, index);
+                } else {
+                    // Double-check that symbols have content
+                    const symbols = container.querySelectorAll('.symbol');
+                    let needsRefresh = false;
+                    symbols.forEach(symbol => {
+                        if (!symbol.textContent || symbol.textContent.trim() === '') {
+                            needsRefresh = true;
+                        }
+                    });
+                    
+                    if (needsRefresh) {
+                        console.log(`Reel ${index + 1} has empty symbols, refreshing...`);
+                        this.initializeSingleReel(container, index);
+                    }
+                }
+            });
         }
         
-        addCredits(amount) {
-            this.credits += amount;
-            this.updateDisplay();
-            showMessage(`Added ${amount} credits!`, 'win');
-        }
-        
-        addCustomCredits() {
-            const input = document.getElementById('slot-custom-amount');
-            const amount = parseInt(input.value);
-            if (amount && amount > 0 && amount <= 10000) {
-                this.addCredits(amount);
-                input.value = '';
-            } else {
-                showMessage('Please enter a valid amount (1-10000)', 'lose');
-            }
-        }
-        
-        resetCredits() {
-            this.credits = 0;
-            this.updateDisplay();
-            showMessage('Credits reset!', 'lose');
-        }
-        
-        resetGame() {
-            this.credits = 0;
-            this.bet = 10;
-            this.totalWon = 0;
-            this.gamesPlayed = 0;
-            this.isSpinning = false;
-            this.initializeReels();
-            this.updateDisplay();
-            showMessage('Game reset!', 'win');
-        }
-        
-        backToGames() {
-            if (window.gameClient) {
-                window.gameClient.hideAllScreens();
-                window.gameClient.showChoiceScreen();
-            }
-        }
-    }
-    
-    function spin() {
-        if (window.slotMachine) {
-            window.slotMachine.spin();
-        }
-    }
-    
-    function stopReel(reelIndex) {
+        stopReel(reelIndex) {
             const reel = this.reels[reelIndex];
             const container = this.symbolContainers[reelIndex];
             
             console.log(`Stopping reel ${reelIndex + 1}`);
             
-            // Remove spinning class
+            // Remove spinning class from both reel and container
             reel.classList.remove('reel-spinning');
-            reel.classList.add('reel-stopping');
-            
-            // Ensure container has symbols
-            if (!container || container.children.length === 0) {
-                console.log(`Reel ${reelIndex + 1} has no symbols, creating them...`);
-                forceShowSymbols();
-            }
+            container.classList.remove('reel-spinning');
             
             // Generate random result
             const resultSymbol = this.symbols[Math.floor(Math.random() * this.symbols.length)];
+            console.log(`Reel ${reelIndex + 1} result symbol: ${resultSymbol}`);
             
-            // Calculate a random stop position that will show the result symbol in the middle
-            // We want the middle visible position (index 1 of 3) to show our result
-            const extraSpins = Math.floor(Math.random() * 5) + 3; // 3-7 extra spins
-            const randomOffset = Math.floor(Math.random() * 10) + 1; // 1-10 random offset
-            const stopPosition = -(extraSpins * 60 + randomOffset * 60);
-            
-            // Ensure the position is within bounds
-            const maxPosition = -(container.children.length * 60);
-            const finalPosition = Math.max(stopPosition, maxPosition);
-            
-            // Set the middle symbol to our result (this is the key fix)
-            const middleIndex = Math.floor(Math.abs(finalPosition) / 60) + 1;
-            if (container.children[middleIndex]) {
-                container.children[middleIndex].textContent = resultSymbol;
-                container.children[middleIndex].innerHTML = resultSymbol;
+            // Ensure container has symbols
+            if (!container || container.children.length === 0) {
+                console.warn(`Reel ${reelIndex + 1} has no symbols, initializing...`);
+                this.initializeSingleReel(container, reelIndex);
             }
             
-            console.log(`Reel ${reelIndex + 1} stopping at position: ${finalPosition} (result: ${resultSymbol})`);
+            // Get current position
+            const currentTransform = container.style.transform;
+            const currentY = parseFloat(currentTransform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
+            
+            // Calculate a good stopping position
+            const symbols = container.querySelectorAll('.symbol');
+            const extraSpins = Math.floor(Math.random() * 8) + 5; // 5-12 extra spins
+            const targetPosition = currentY - (extraSpins * 60);
+            
+            // Ensure the position is within bounds
+            const maxPosition = -((symbols.length - 3) * 60);
+            const finalPosition = Math.max(targetPosition, maxPosition);
+            
+            console.log(`Reel ${reelIndex + 1} stopping at position: ${finalPosition} (from ${currentY})`);
             
             // Use smooth animation
-            animateToPosition(container, finalPosition, () => {
-                reel.classList.remove('reel-stopping');
-                
-                // Ensure symbols are still visible after stopping
-                ensureSymbolsVisible(reelIndex);
+            this.animateToPosition(container, finalPosition, () => {
+                console.log(`Reel ${reelIndex + 1} stopped at final position: ${finalPosition}`);
                 
                 // Check if all reels have stopped
                 if (reelIndex === 2) {
-                    setTimeout(() => checkResults(), 500);
+                    setTimeout(() => this.checkResults(), 100);
                 }
             });
         }
-    
-    function ensureSymbolsVisible(reelIndex) {
-            const container = this.symbolContainers[reelIndex];
-            if (!container || container.children.length === 0) {
-                console.log(`Ensuring symbols visible for reel ${reelIndex + 1}`);
-                forceShowSymbols();
-            }
-        }
-    
-    function animateToPosition(container, targetPosition, callback) {
+        
+        animateToPosition(container, targetPosition, callback) {
+            // Remove any existing animation classes first
+            container.classList.remove('reel-spinning');
+            
             const startPosition = parseFloat(container.style.transform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
             const distance = targetPosition - startPosition;
-            const duration = 3000; // 3 seconds for smoother effect
+            const duration = 1000; // 1 second for smoother effect
             const startTime = performance.now();
+            
+            console.log(`Animating from ${startPosition} to ${targetPosition}, distance: ${distance}`);
             
             const animate = (currentTime) => {
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 
                 // Use ease-out function for smooth deceleration
-                const easeOut = 1 - Math.pow(1 - progress, 4);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
                 const currentPosition = startPosition + (distance * easeOut);
                 
                 container.style.transform = `translateY(${currentPosition}px)`;
+                container.style.transition = 'none'; // Disable CSS transitions during animation
                 
                 if (progress < 1) {
                     requestAnimationFrame(animate);
                 } else {
-                    // Ensure symbols are visible after animation
-                    container.style.visibility = 'visible';
-                    container.style.opacity = '1';
+                    // Ensure final position is set
+                    container.style.transform = `translateY(${targetPosition}px)`;
+                    container.style.transition = ''; // Re-enable CSS transitions
                     callback();
                 }
             };
             
             requestAnimationFrame(animate);
         }
-    
-    function checkResults() {
-            const allRows = getAllVisibleSymbols();
+        
+        checkResults() {
+            const allRows = this.getAllVisibleSymbols();
             console.log('All visible rows:', allRows);
             
             let totalWin = 0;
@@ -2697,7 +2628,7 @@ class TicTacToeMultiplayerClient {
             
             // Check each payline (row) for wins
             allRows.forEach((row, rowIndex) => {
-                const rowWins = checkPayline(row, rowIndex);
+                const rowWins = this.checkPayline(row, rowIndex);
                 rowWins.forEach(win => {
                     totalWin += win.payout;
                     allWinningCombinations.push(win);
@@ -2707,7 +2638,7 @@ class TicTacToeMultiplayerClient {
             // Check vertical columns for wins
             for (let col = 0; col < 3; col++) {
                 const column = allRows.map(row => row[col]);
-                const columnWins = checkPayline(column, col + 3); // Use col + 3 to distinguish from rows
+                const columnWins = this.checkPayline(column, col + 3); // Use col + 3 to distinguish from rows
                 columnWins.forEach(win => {
                     totalWin += win.payout;
                     allWinningCombinations.push(win);
@@ -2717,17 +2648,17 @@ class TicTacToeMultiplayerClient {
             if (totalWin > 0) {
                 this.credits += totalWin;
                 this.totalWon += totalWin;
-                highlightWinningSymbols(allWinningCombinations);
+                this.highlightWinningSymbols(allWinningCombinations);
                 this.showWinMessage(totalWin, allWinningCombinations);
             } else {
-                showMessage('No win, try again!', 'lose');
+                this.showMessage('No win, try again!', 'lose');
             }
             
             this.isSpinning = false;
             this.updateDisplay();
         }
-    
-    function checkPayline(payline, paylineIndex) {
+        
+        checkPayline(payline, paylineIndex) {
             const winningCombinations = [];
             
             // 1. Check for exact 3-of-a-kind matches (highest priority)
@@ -2741,7 +2672,8 @@ class TicTacToeMultiplayerClient {
                         symbols: payline,
                         payout: payout,
                         payline: paylineIndex,
-                        multiplier: multiplier
+                        multiplier: multiplier,
+                        winningPositions: [0, 1, 2] // All three positions
                     });
                 }
             }
@@ -2749,12 +2681,24 @@ class TicTacToeMultiplayerClient {
             // 2. Check for 2-of-a-kind matches (only if no 3-of-a-kind)
             else if (payline[0] === payline[1] || payline[1] === payline[2] || payline[0] === payline[2]) {
                 const payout = this.bet * 2; // 2x multiplier for any 2 match
+                
+                // Determine which positions are winning
+                let winningPositions = [];
+                if (payline[0] === payline[1]) {
+                    winningPositions = [0, 1]; // First two match
+                } else if (payline[1] === payline[2]) {
+                    winningPositions = [1, 2]; // Last two match
+                } else if (payline[0] === payline[2]) {
+                    winningPositions = [0, 2]; // First and last match
+                }
+                
                 winningCombinations.push({
                     type: 'two-of-a-kind',
                     symbols: payline,
                     payout: payout,
                     payline: paylineIndex,
-                    multiplier: 2
+                    multiplier: 2,
+                    winningPositions: winningPositions
                 });
             }
             
@@ -2799,52 +2743,66 @@ class TicTacToeMultiplayerClient {
             
             return winningCombinations;
         }
-    
-    function getAllVisibleSymbols() {
+        
+        getAllVisibleSymbols() {
             const allRows = [];
             
-            // Get symbols for all three rows (top, middle, bottom)
+            // Get symbols for all three visible rows (top, middle, bottom)
             for (let row = 0; row < 3; row++) {
                 const rowSymbols = [];
-                this.symbolContainers.forEach(container => {
+                this.symbolContainers.forEach((container, containerIndex) => {
                     const symbols = container.querySelectorAll('.symbol');
                     const currentTransform = container.style.transform;
                     const currentY = parseFloat(currentTransform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
                     
-                    // Calculate which symbol is at the specific row position
+                    // Calculate which symbol is at the specific visible row position
+                    // We want the 3 visible symbols: top (row 0), middle (row 1), bottom (row 2)
                     const symbolIndex = Math.floor(Math.abs(currentY) / 60) + row;
                     const actualIndex = symbolIndex % symbols.length;
                     
-                    if (symbols[actualIndex]) {
+                    console.log(`Container ${containerIndex + 1}, Row ${row}:`, {
+                        currentY,
+                        symbolIndex,
+                        actualIndex,
+                        symbolsLength: symbols.length,
+                        symbol: symbols[actualIndex]?.textContent
+                    });
+                    
+                    if (symbols[actualIndex] && symbols[actualIndex].textContent) {
                         rowSymbols.push(symbols[actualIndex].textContent);
                     } else {
-                        rowSymbols.push('?'); // Fallback if symbol not found
+                        // Fallback: generate a random symbol if none found
+                        const fallbackSymbol = this.symbols[Math.floor(Math.random() * this.symbols.length)];
+                        console.warn(`No symbol found at index ${actualIndex}, using fallback: ${fallbackSymbol}`);
+                        rowSymbols.push(fallbackSymbol);
                     }
                 });
                 allRows.push(rowSymbols);
             }
             
+            console.log('Visible symbols in 3 rows:', allRows);
             return allRows;
         }
-    
-    function getVisibleSymbols() {
+        
+        getVisibleSymbols() {
             // This is kept for backward compatibility, returns middle row
-            const allRows = getAllVisibleSymbols();
+            const allRows = this.getAllVisibleSymbols();
             return allRows[1]; // Return middle row
         }
-    
-    function highlightWinningSymbols(winningCombinations) {
+        
+        highlightWinningSymbols(winningCombinations) {
             // Clear all previous highlights first
-            clearHighlights();
+            this.clearHighlights();
             
             // Highlight winning symbols in each payline
             winningCombinations.forEach(win => {
                 const payline = win.payline;
                 const symbols = win.symbols;
+                const winningPositions = win.winningPositions || [0, 1, 2]; // Default to all positions
                 
                 // Check if this is a vertical column (payline >= 3)
                 if (payline >= 3) {
-                    // Vertical column win
+                    // Vertical column win - highlight all three visible symbols in the column
                     const columnIndex = payline - 3;
                     this.symbolContainers.forEach((container, reelIndex) => {
                         if (reelIndex === columnIndex) {
@@ -2852,7 +2810,7 @@ class TicTacToeMultiplayerClient {
                             const currentTransform = container.style.transform;
                             const currentY = parseFloat(currentTransform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
                             
-                            // Highlight all three symbols in this column
+                            // Highlight all three visible symbols in this column
                             for (let row = 0; row < 3; row++) {
                                 const symbolIndex = Math.floor(Math.abs(currentY) / 60) + row;
                                 const actualIndex = symbolIndex % containerSymbols.length;
@@ -2864,32 +2822,34 @@ class TicTacToeMultiplayerClient {
                         }
                     });
                 } else {
-                    // Horizontal row win
+                    // Horizontal row win - highlight only the winning positions
                     this.symbolContainers.forEach((container, reelIndex) => {
                         const containerSymbols = container.querySelectorAll('.symbol');
                         const currentTransform = container.style.transform;
                         const currentY = parseFloat(currentTransform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
                         
-                        // Calculate which symbol is at the specific payline position
-                        const symbolIndex = Math.floor(Math.abs(currentY) / 60) + payline;
-                        const actualIndex = symbolIndex % containerSymbols.length;
-                        
-                        if (containerSymbols[actualIndex]) {
-                            containerSymbols[actualIndex].classList.add('winning');
-                        }
+                        // Only highlight the specific winning positions
+                        winningPositions.forEach(position => {
+                            const symbolIndex = Math.floor(Math.abs(currentY) / 60) + payline;
+                            const actualIndex = symbolIndex % containerSymbols.length;
+                            
+                            if (containerSymbols[actualIndex]) {
+                                containerSymbols[actualIndex].classList.add('winning');
+                            }
+                        });
                     });
                 }
             });
         }
-    
-    function clearHighlights() {
+        
+        clearHighlights() {
             this.symbolContainers.forEach(container => {
                 const symbols = container.querySelectorAll('.symbol');
                 symbols.forEach(symbol => symbol.classList.remove('winning'));
             });
         }
-    
-    function showWinMessage(totalWin, winningCombinations) {
+        
+        showWinMessage(totalWin, winningCombinations) {
             let message = `🎉 You won ${totalWin} credits!`;
             
             if (winningCombinations.length > 0) {
@@ -2907,10 +2867,10 @@ class TicTacToeMultiplayerClient {
                 }
             }
             
-            showMessage(message, 'win');
+            this.showMessage(message, 'win');
         }
-    
-    function showMessage(text, type) {
+        
+        showMessage(text, type) {
             const messageEl = document.getElementById('slot-message');
             messageEl.textContent = text;
             messageEl.className = `message ${type}`;
@@ -2920,21 +2880,28 @@ class TicTacToeMultiplayerClient {
                 messageEl.style.display = 'none';
         }, 3000);
     }
-    
+        
+        updateDisplay() {
+            document.getElementById('slot-credits').textContent = this.credits;
+            document.getElementById('slot-current-bet').textContent = this.bet;
+            document.getElementById('slot-total-won').textContent = this.totalWon;
+            document.getElementById('slot-games-played').textContent = this.gamesPlayed;
+        }
+        
         changeBet(amount) {
             const newBet = this.bet + amount;
-            if (newBet >= 10 && newBet <= this.credits) {
+            if (newBet >= 10) {
                 this.bet = newBet;
                 this.updateDisplay();
             }
-    }
+        }
     
     addCredits(amount) {
             this.credits += amount;
         this.updateDisplay();
-            showMessage(`Added ${amount} credits!`, 'win');
+            this.showMessage(`Added ${amount} credits!`, 'win');
         }
-    
+        
         addCustomCredits() {
             const input = document.getElementById('slot-custom-amount');
             const amount = parseInt(input.value);
@@ -2942,28 +2909,28 @@ class TicTacToeMultiplayerClient {
                 this.addCredits(amount);
                 input.value = '';
             } else {
-                showMessage('Please enter a valid amount (1-10000)', 'lose');
+                this.showMessage('Please enter a valid amount (1-10000)', 'lose');
             }
     }
     
     resetCredits() {
             this.credits = 0;
         this.updateDisplay();
-            showMessage('Credits reset!', 'lose');
+            this.showMessage('Credits reset!', 'lose');
         }
-    
+        
         resetGame() {
             this.credits = 0;
             this.bet = 10;
         this.totalWon = 0;
         this.gamesPlayed = 0;
         this.isSpinning = false;
-            clearHighlights();
+            this.clearHighlights();
             this.initializeReels();
         this.updateDisplay();
-            showMessage('Game reset!', 'win');
+            this.showMessage('Game reset!', 'win');
         }
-    
+        
         backToGames() {
             if (window.gameClient) {
                 window.gameClient.hideAllScreens();
@@ -3000,5 +2967,21 @@ function changeSlotBet(amount) {
     function resetSlotGame() {
         if (window.slotMachine) {
             window.slotMachine.resetGame();
+        }
     }
-} 
+    
+    // Force initialize slot machine on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('Page loaded, initializing slot machine...');
+        if (!window.slotMachine) {
+            window.slotMachine = new SlotMachine();
+        }
+        
+        // Also try after a delay to ensure everything is ready
+        setTimeout(() => {
+            if (window.slotMachine) {
+                console.log('Delayed refresh of slot machine...');
+                window.slotMachine.forceRefreshDisplay();
+            }
+        }, 500);
+    }); 

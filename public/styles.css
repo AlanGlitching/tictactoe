@@ -1985,11 +1985,11 @@ footer {
 
 @keyframes reelSpin {
     0% { transform: translateY(0); }
-    100% { transform: translateY(-120px); }
+    100% { transform: translateY(-300px); }
 }
 
 .reel-spinning .symbols-container {
-    animation: reelSpin 0.08s linear infinite !important;
+    animation: reelSpin 0.1s linear infinite !important;
 }
 
 @keyframes reelStop {
@@ -2012,7 +2012,7 @@ footer {
     transition: none;
     visibility: visible;
     opacity: 1;
-    z-index: 1;
+    z-index: 3;
     transform: translateY(0px);
 }
 

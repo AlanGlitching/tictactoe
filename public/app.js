@@ -2296,7 +2296,7 @@ class TicTacToeMultiplayerClient {
                     transform: translateY(0px) !important;
                     visibility: visible !important;
                     opacity: 1 !important;
-                    z-index: 1 !important;
+                    z-index: 3 !important;
                     margin: 0 !important;
                     padding: 0 !important;
                     box-sizing: border-box !important;
@@ -2488,7 +2488,10 @@ class TicTacToeMultiplayerClient {
             this.isSpinning = true;
             this.credits -= this.bet;
             this.gamesPlayed++;
-        this.updateDisplay();
+            this.updateDisplay();
+            
+            // Ensure all reels have symbols before spinning
+            this.ensureAllReelsHaveSymbols();
             
             // Clear previous highlights
             this.clearHighlights();
@@ -2511,34 +2514,68 @@ class TicTacToeMultiplayerClient {
             setTimeout(() => this.stopReel(2), 1600);
         }
         
+        ensureAllReelsHaveSymbols() {
+            console.log('Ensuring all reels have symbols...');
+            this.symbolContainers.forEach((container, index) => {
+                if (!container || container.children.length === 0) {
+                    console.log(`Reel ${index + 1} is empty, initializing...`);
+                    this.initializeSingleReel(container, index);
+                } else {
+                    // Double-check that symbols have content
+                    const symbols = container.querySelectorAll('.symbol');
+                    let needsRefresh = false;
+                    symbols.forEach(symbol => {
+                        if (!symbol.textContent || symbol.textContent.trim() === '') {
+                            needsRefresh = true;
+                        }
+                    });
+                    
+                    if (needsRefresh) {
+                        console.log(`Reel ${index + 1} has empty symbols, refreshing...`);
+                        this.initializeSingleReel(container, index);
+                    }
+                }
+            });
+        }
+        
         stopReel(reelIndex) {
             const reel = this.reels[reelIndex];
             const container = this.symbolContainers[reelIndex];
             
             console.log(`Stopping reel ${reelIndex + 1}`);
             
-            // Remove spinning class
+            // Remove spinning class from both reel and container
             reel.classList.remove('reel-spinning');
-            reel.classList.add('reel-stopping');
-            
-            // Also remove spinning class from container
             container.classList.remove('reel-spinning');
             
             // Generate random result
             const resultSymbol = this.symbols[Math.floor(Math.random() * this.symbols.length)];
-            const symbolIndex = this.symbols.indexOf(resultSymbol);
+            console.log(`Reel ${reelIndex + 1} result symbol: ${resultSymbol}`);
             
-            // Calculate stop position to show result in the middle (position 1 of 3 visible)
-            const extraSpins = Math.floor(Math.random() * 8) + 5; // 5-12 extra spins for more suspense
-            const stopPosition = -(symbolIndex + extraSpins) * 60;
+            // Ensure container has symbols
+            if (!container || container.children.length === 0) {
+                console.warn(`Reel ${reelIndex + 1} has no symbols, initializing...`);
+                this.initializeSingleReel(container, reelIndex);
+            }
+            
+            // Get current position
+            const currentTransform = container.style.transform;
+            const currentY = parseFloat(currentTransform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
+            
+            // Calculate a good stopping position
+            const symbols = container.querySelectorAll('.symbol');
+            const extraSpins = Math.floor(Math.random() * 8) + 5; // 5-12 extra spins
+            const targetPosition = currentY - (extraSpins * 60);
             
             // Ensure the position is within bounds
-            const maxPosition = -(50 * 60); // 50 symbols * 60px height
-            const finalPosition = Math.max(stopPosition, maxPosition);
+            const maxPosition = -((symbols.length - 3) * 60);
+            const finalPosition = Math.max(targetPosition, maxPosition);
+            
+            console.log(`Reel ${reelIndex + 1} stopping at position: ${finalPosition} (from ${currentY})`);
             
             // Use smooth animation
             this.animateToPosition(container, finalPosition, () => {
-                reel.classList.remove('reel-stopping');
+                console.log(`Reel ${reelIndex + 1} stopped at final position: ${finalPosition}`);
                 
                 // Check if all reels have stopped
                 if (reelIndex === 2) {
@@ -2548,24 +2585,33 @@ class TicTacToeMultiplayerClient {
         }
         
         animateToPosition(container, targetPosition, callback) {
+            // Remove any existing animation classes first
+            container.classList.remove('reel-spinning');
+            
             const startPosition = parseFloat(container.style.transform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
             const distance = targetPosition - startPosition;
-            const duration = 800; // 0.8 second for smoother effect
+            const duration = 1000; // 1 second for smoother effect
             const startTime = performance.now();
+            
+            console.log(`Animating from ${startPosition} to ${targetPosition}, distance: ${distance}`);
             
             const animate = (currentTime) => {
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 
                 // Use ease-out function for smooth deceleration
-                const easeOut = 1 - Math.pow(1 - progress, 4);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
                 const currentPosition = startPosition + (distance * easeOut);
                 
                 container.style.transform = `translateY(${currentPosition}px)`;
+                container.style.transition = 'none'; // Disable CSS transitions during animation
                 
                 if (progress < 1) {
                     requestAnimationFrame(animate);
                 } else {
+                    // Ensure final position is set
+                    container.style.transform = `translateY(${targetPosition}px)`;
+                    container.style.transition = ''; // Re-enable CSS transitions
                     callback();
                 }
             };
@@ -2704,7 +2750,7 @@ class TicTacToeMultiplayerClient {
             // Get symbols for all three visible rows (top, middle, bottom)
             for (let row = 0; row < 3; row++) {
                 const rowSymbols = [];
-                this.symbolContainers.forEach(container => {
+                this.symbolContainers.forEach((container, containerIndex) => {
                     const symbols = container.querySelectorAll('.symbol');
                     const currentTransform = container.style.transform;
                     const currentY = parseFloat(currentTransform.match(/translateY\(([^)]+)\)/)?.[1] || '0');
@@ -2714,10 +2760,21 @@ class TicTacToeMultiplayerClient {
                     const symbolIndex = Math.floor(Math.abs(currentY) / 60) + row;
                     const actualIndex = symbolIndex % symbols.length;
                     
-                    if (symbols[actualIndex]) {
+                    console.log(`Container ${containerIndex + 1}, Row ${row}:`, {
+                        currentY,
+                        symbolIndex,
+                        actualIndex,
+                        symbolsLength: symbols.length,
+                        symbol: symbols[actualIndex]?.textContent
+                    });
+                    
+                    if (symbols[actualIndex] && symbols[actualIndex].textContent) {
                         rowSymbols.push(symbols[actualIndex].textContent);
                     } else {
-                        rowSymbols.push('?'); // Fallback if symbol not found
+                        // Fallback: generate a random symbol if none found
+                        const fallbackSymbol = this.symbols[Math.floor(Math.random() * this.symbols.length)];
+                        console.warn(`No symbol found at index ${actualIndex}, using fallback: ${fallbackSymbol}`);
+                        rowSymbols.push(fallbackSymbol);
                     }
                 });
                 allRows.push(rowSymbols);
